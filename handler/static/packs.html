@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="packsApp()" :class="{ 'dark': isDark }">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title x-text="t('packs.title')">Управление паками — Danbooru Prompt Builder</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="manifest" href="/static/manifest.json">
+</head>
+<body class="bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-100 min-h-screen">
+  <header class="flex items-center gap-3 px-4 py-2 border-b border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-700">
+    <h1 class="text-lg font-bold" x-text="t('packs.title')">Управление паками</h1>
+    <div class="flex-1"></div>
+    <div class="flex gap-1 items-center">
+      <span @click="theme='auto';localStorage.setItem('theme','auto')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='auto' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.auto')">◐</span>
+      <span @click="theme='dark';localStorage.setItem('theme','dark')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='dark' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.dark')">☾</span>
+      <span @click="theme='light';localStorage.setItem('theme','light')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='light' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.light')">☀</span>
+      <span @click="lang='ru';localStorage.setItem('lang','ru');loadTranslations()" class="inline-flex items-center text-xs cursor-pointer transition-all select-none opacity-40 hover:opacity-100" :class="lang==='ru' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" title="русский">
+        <svg width="14" height="10" viewBox="0 0 14 10"><rect width="14" height="3.33" fill="#fff"/><rect y="3.33" width="14" height="3.33" fill="#0039A6"/><rect y="6.66" width="14" height="3.34" fill="#D52B1E"/></svg>ru
+      </span>
+      <span @click="lang='en';localStorage.setItem('lang','en');loadTranslations()" class="inline-flex items-center text-xs cursor-pointer transition-all select-none opacity-40 hover:opacity-100" :class="lang==='en' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" title="english">
+        <svg width="14" height="10" viewBox="0 0 14 10"><rect width="14" height="10" fill="#B22234"/><rect y="1.25" width="14" height="1.25" fill="#fff"/><rect y="3.75" width="14" height="1.25" fill="#fff"/><rect y="6.25" width="14" height="1.25" fill="#fff"/><rect y="8.75" width="14" height="1.25" fill="#fff"/><rect width="5.5" height="5.5" fill="#3C3B6E"/></svg>en
+      </span>
+    </div>
+    <a href="/" class="text-sm text-blue-600 dark:text-blue-400 hover:underline" x-text="t('packs.back')">На главную</a>
+  </header>
+  <main class="p-4 max-w-4xl mx-auto">
+    <table class="w-full border-collapse">
+      <thead>
+        <tr class="text-left text-sm border-b border-gray-200 dark:border-dark-600">
+          <th class="pb-2">ID</th>
+          <th class="pb-2" x-text="t('packs.name')">Название</th>
+          <th class="pb-2" x-text="t('packs.path')">Путь</th>
+          <th class="pb-2" x-text="t('packs.created')">Создан</th>
+          <th class="pb-2" x-text="t('packs.actions')">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="p in packs" :key="p.id">
+          <tr class="border-b border-gray-100 dark:border-dark-700 text-sm">
+            <td class="py-2" x-text="p.id"></td>
+            <td class="py-2 font-medium" x-text="p.name"></td>
+            <td class="py-2 text-gray-400 text-xs" x-text="p.path"></td>
+            <td class="py-2 text-gray-400 text-xs" x-text="p.created_at"></td>
+            <td class="py-2">
+              <button @click="rescan(p)" class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" x-text="t('packs.rescan')">Пересканировать</button>
+              <button @click="deletePack(p)" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" x-text="t('packs.delete')">Удалить</button>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+    <div x-show="packs.length === 0" class="text-center py-8 text-gray-400" x-text="t('packs.empty')">Нет паков</div>
+  </main>
+  <script>
+    function packsApp() {
+      return {
+        theme: localStorage.getItem('theme') || 'auto',
+        lang: localStorage.getItem('lang') || (navigator.language || '').startsWith('ru') ? 'ru' : 'en',
+        translations: {},
+
+        t(key) {
+          return this.translations[key] || key;
+        },
+
+        async loadTranslations() {
+          try {
+            const res = await fetch(`/static/i18n/${this.lang}.json`);
+            this.translations = await res.json();
+          } catch (e) {
+            console.error('Failed to load translations:', e);
+            this.translations = {};
+          }
+        },
+
+        get isDark() {
+          if (this.theme === 'dark') return true;
+          if (this.theme === 'light') return false;
+          return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        },
+
+        packs: [],
+        async init() {
+          this.loadTranslations();
+          await this.load();
+        },
+        async load() {
+          try {
+            const res = await fetch('/api/packs');
+            this.packs = await res.json();
+          } catch (e) {
+            console.error(e);
+          }
+        },
+        async rescan(pack) {
+          const res = await fetch('/api/sync', { method: 'POST' });
+          if (res.ok) await this.load();
+        },
+        async deletePack(pack) {
+          if (!confirm(this.t('packs.confirm_delete').replace('{name}', pack.name))) return;
+          await fetch(`/api/packs?id=${pack.id}`, { method: 'DELETE' });
+          await this.load();
+        }
+      };
+    }
+  </script>
+</body>
+</html>

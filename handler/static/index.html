@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="app()" :class="{ 'dark': isDark }" @keydown.window.prevent.cmd.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.enter="addCustomTag()" @keydown.window.prevent.alt.1="copyPrompt('positive')" @keydown.window.prevent.alt.2="copyPrompt('negative')" @keydown.window.escape="drawerOpen=false;saveModalOpen=false">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title x-text="t('app.title')">Danbooru Prompt Builder</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-100 h-screen overflow-hidden flex flex-col">
+  <!-- Header -->
+  <header class="flex items-center gap-3 px-4 py-2 border-b border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-700 shrink-0">
+    <h1 class="text-lg font-bold whitespace-nowrap" x-text="t('app.title')">Danbooru Prompt Builder</h1>
+    <span class="text-sm text-gray-500 dark:text-dark-400 shrink-0" x-text="t('packs.label')">Наборы</span>
+    <div class="relative" x-data="{ dpOpen: false }" style="min-width:200px">
+      <button @click="dpOpen = !dpOpen" @click.outside="dpOpen = false" class="w-full flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-white dark:bg-dark-600 cursor-pointer transition-colors" :class="{ 'rounded-b-none': dpOpen }">
+        <span class="flex-1 truncate text-left text-gray-900 dark:text-dark-100" x-text="(packs.find(p => p.id === selectedPackId) || {}).name || ''"></span>
+        <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-60"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-60"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div x-show="dpOpen"
+           x-transition:enter="transition ease-out origin-top"
+           x-transition:enter-start="scale-y-0 opacity-0"
+           x-transition:enter-end="scale-y-100 opacity-100"
+           x-transition:leave="transition ease-in origin-top"
+           x-transition:leave-start="scale-y-100 opacity-100"
+           x-transition:leave-end="scale-y-0 opacity-0"
+           class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg"
+           style="margin-top:-1px;transition-duration:150ms">
+        <template x-for="p in packs" :key="p.id">
+          <button @click="selectedPackId = p.id; loadTree(); dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedPackId === p.id ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'" x-text="p.name"></button>
+        </template>
+      </div>
+    </div>
+    <button @click="syncTags()" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" :disabled="syncing">
+      <span x-text="syncing ? t('app.syncing') : t('app.sync')"></span>
+    </button>
+    <div class="flex-1"></div>
+    <div class="flex gap-1 items-center">
+      <span @click="theme='auto';localStorage.setItem('theme','auto')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='auto' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.auto')">◐</span>
+      <span @click="theme='dark';localStorage.setItem('theme','dark')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='dark' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.dark')">☾</span>
+      <span @click="theme='light';localStorage.setItem('theme','light')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='light' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.light')">☀</span>
+      <span @click="lang='ru';localStorage.setItem('lang','ru');loadTranslations()" class="inline-flex items-center text-xs cursor-pointer transition-all select-none opacity-40 hover:opacity-100" :class="lang==='ru' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" title="русский">
+        <svg width="14" height="10" viewBox="0 0 14 10"><rect width="14" height="3.33" fill="#fff"/><rect y="3.33" width="14" height="3.33" fill="#0039A6"/><rect y="6.66" width="14" height="3.34" fill="#D52B1E"/></svg>ru
+      </span>
+      <span @click="lang='en';localStorage.setItem('lang','en');loadTranslations()" class="inline-flex items-center text-xs cursor-pointer transition-all select-none opacity-40 hover:opacity-100" :class="lang==='en' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" title="english">
+        <svg width="14" height="10" viewBox="0 0 14 10"><rect width="14" height="10" fill="#B22234"/><rect y="1.25" width="14" height="1.25" fill="#fff"/><rect y="3.75" width="14" height="1.25" fill="#fff"/><rect y="6.25" width="14" height="1.25" fill="#fff"/><rect y="8.75" width="14" height="1.25" fill="#fff"/><rect width="5.5" height="5.5" fill="#3C3B6E"/></svg>en
+      </span>
+    </div>
+    <a href="/packs" class="text-sm text-blue-600 dark:text-blue-400 hover:underline" x-text="t('header.packs')">Управление паками</a>
+  </header>
+
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Tags Sidebar — 70% -->
+    <aside class="flex-[7] min-w-0 border-r border-gray-200 dark:border-dark-600 flex flex-col bg-gray-50 dark:bg-dark-700 overflow-hidden">
+      <!-- Presets -->
+      <div class="px-3 py-2 border-b border-gray-200 dark:border-dark-600">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5" x-text="t('presets.label')">Пресеты</div>
+        <div class="flex flex-wrap gap-1">
+          <template x-for="(data, name) in presetData" :key="name">
+            <button @click="applyPreset(name)" class="px-2.5 py-1 text-xs rounded border border-gray-300 dark:border-dark-500 bg-white dark:bg-dark-600 text-gray-900 dark:text-dark-100 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 transition-colors cursor-pointer" x-text="name"></button>
+          </template>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="p-3 border-b border-gray-200 dark:border-dark-600">
+        <input type="text" x-model="searchQuery" @input.debounce="searchTags()" x-ref="searchInput" :placeholder="t('search.placeholder')" class="w-full border rounded px-3 py-2 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+        <div x-show="searchResults.length > 0" class="mt-1 max-h-60 overflow-y-auto p-2 flex flex-wrap gap-1">
+          <template x-for="item in searchResults" :key="item.id">
+            <span class="tag-pill text-xs" :class="selectedClass(item.tag_name)" @click="addTag(item)">
+              <span x-text="item.tag_name" :title="item.aliases" class="max-w-40 truncate"></span>
+              <span class="text-[10px] opacity-60 shrink-0" x-text="item.category_name + '/' + item.subcategory_name"></span>
+              <button @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :title="t('tag.fav.add')" class="btn btn-fav"></button>
+              <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
+              <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
+            </span>
+          </template>
+        </div>
+      </div>
+
+      <!-- Favorites -->
+      <div class="border-b border-gray-200 dark:border-dark-600">
+        <button @click="favOpen = !favOpen" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium bg-orange-50 dark:bg-orange-100 hover:bg-orange-100 dark:hover:bg-orange-200 text-orange-600 dark:text-orange-200 dark:hover:text-dark-900">
+          <span x-text="t('fav.title')">★ Избранное</span>
+          <span x-text="favOpen ? '\u25BC' : '\u25B6'" class="text-xs"></span>
+        </button>
+        <div x-show="favOpen" class="p-2 max-h-48 overflow-y-auto flex flex-wrap gap-1">
+          <template x-for="item in favorites" :key="item.tag_name">
+            <span class="tag-pill" :class="selectedClass(item.tag_name)" @click="copyTagName(item.tag_name)">
+              <span x-text="item.tag_name" class="max-w-40 truncate"></span>
+              <button @click.stop="toggleFavorite(item)" class="btn btn-fav" :title="t('tag.fav.remove')">★</button>
+              <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
+              <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
+            </span>
+          </template>
+          <div x-show="favorites.length === 0" class="w-full text-xs text-gray-400 px-2 py-1" x-text="t('fav.empty')">Нет избранных тегов</div>
+        </div>
+      </div>
+
+      <!-- Constant + Tree tags (shared scroll) -->
+      <div class="flex-1 overflow-y-auto">
+        <div class="border-b border-gray-200 dark:border-dark-600">
+          <template x-for="cat in constantTags" :key="cat.name">
+          <div>
+            <button @click="constOpen[cat.name] = !constOpen[cat.name]" class="cursor-pointer w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wide bg-blue-50 dark:bg-dark-500 hover:bg-blue-100 dark:hover:bg-dark-600 text-gray-900 dark:text-dark-100">
+              <span x-text="t(cat.tkey || cat.name)"></span>
+              <span x-text="constOpen[cat.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
+            </button>
+            <div x-show="constOpen[cat.name]" class="px-3 pb-1">
+              <template x-if="cat.tags">
+                <div class="flex flex-wrap gap-1">
+                  <template x-for="tag in cat.tags" :key="tag">
+                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @click="copyTagName(tag)">
+                      <span x-text="tag" class="max-w-40 truncate"></span>
+                      <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
+                      <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                    </span>
+                  </template>
+                </div>
+              </template>
+              <template x-if="cat.subcategories">
+                <template x-for="sub in cat.subcategories" :key="sub.name">
+                  <div>
+                    <button @click="constSubOpen[cat.name+'_'+sub.name] = !constSubOpen[cat.name+'_'+sub.name]" class="cursor-pointer w-full flex items-center justify-between px-2 py-0.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-dark-600 text-gray-500 dark:text-dark-400">
+                      <span x-text="sub.name"></span>
+                      <span x-text="constSubOpen[cat.name+'_'+sub.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
+                    </button>
+                    <div x-show="constSubOpen[cat.name+'_'+sub.name]" class="flex flex-wrap gap-1 px-2 py-1">
+                      <template x-for="tag in sub.tags" :key="tag">
+                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @click="copyTagName(tag)">
+                          <span x-text="tag" class="max-w-40 truncate"></span>
+                          <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: sub.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
+                          <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: sub.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                        </span>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+        <template x-for="cat in tree" :key="cat.name">
+          <div>
+            <button @click="toggleCategory(cat)" class="cursor-pointer w-full flex items-center justify-between px-3 py-2 text-sm font-bold uppercase tracking-wide bg-gray-200 dark:bg-dark-600 hover:bg-gray-300 dark:hover:bg-dark-500 text-gray-900 dark:text-dark-100">
+              <div class="flex items-center gap-2 min-w-0">
+                <span x-text="cat.name"></span>
+                <span class="text-[10px] text-gray-400 dark:text-dark-400 font-normal" x-text="'('+cat.count+')'"></span>
+              </div>
+              <span x-text="treeOpen[cat.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
+            </button>
+            <div x-show="treeOpen[cat.name]">
+              <div class="px-4 py-2 flex flex-wrap gap-1.5">
+                <template x-for="item in (cat._tags || [])" :key="item.id">
+                  <span class="tag-pill" :class="selectedClass(item.tag_name)" @mouseenter="showTagImage($event, item.tag_name)" @mouseleave="hideTagImage()" @click="copyTagName(item.tag_name)">
+                    <span x-text="item.tag_name" :title="item.aliases" class="max-w-60 truncate"></span>
+                    <button @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :title="t('tag.fav.add')" class="btn btn-fav"></button>
+                    <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
+                    <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                  </span>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </aside>
+
+    <!-- Workspace — 30% -->
+    <main class="flex-[3] min-w-0 flex flex-col overflow-hidden">
+      <!-- Chips -->
+      <div class="p-3 border-b border-gray-200 dark:border-dark-600 overflow-y-auto max-h-48">
+        <div class="text-xs font-semibold mb-1 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
+          <span x-text="t('workspace.positive')">Позитивные теги</span>
+        </div>
+        <div class="flex flex-wrap gap-1 min-h-[28px] mb-3">
+          <template x-for="(ch, i) in positiveChips" :key="i">
+            <span class="chip chip-positive" @click="removeChip('positive', i)" @mouseenter="showTagImage($event, ch.name)" @mouseleave="hideTagImage()">
+              <span x-text="ch.name" class="max-w-48 truncate"></span>
+              <span class="text-xs opacity-60 hover:opacity-100">x</span>
+            </span>
+          </template>
+        </div>
+        <div class="text-xs font-semibold mb-1 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+          <span x-text="t('workspace.negative')">Негативные теги</span>
+        </div>
+        <div class="flex flex-wrap gap-1 min-h-[28px]">
+          <template x-for="(ch, i) in negativeChips" :key="i">
+            <span class="chip chip-negative" @click="removeChip('negative', i)" @mouseenter="showTagImage($event, ch.name)" @mouseleave="hideTagImage()">
+              <span x-text="ch.name" class="max-w-48 truncate"></span>
+              <span class="text-xs opacity-60 hover:opacity-100">x</span>
+            </span>
+          </template>
+        </div>
+      </div>
+
+      <!-- Custom input -->
+      <div class="p-3 border-b border-gray-200 dark:border-dark-600">
+        <div class="flex items-center gap-1.5">
+          <input type="text" x-model="customTag" @keydown.enter="addCustomTag(false)" :placeholder="t('custom.placeholder')" class="flex-1 border rounded px-2 py-1 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 min-w-0">
+          <button @click="addCustomTag(false)" class="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" :title="t('custom.to.pos')">+</button>
+          <button @click="addCustomTag(true)" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" :title="t('custom.to.neg')">−</button>
+        </div>
+      </div>
+
+      <!-- Prompt outputs -->
+      <div class="flex-1 p-3 space-y-2 overflow-y-auto min-h-0">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-semibold" x-text="t('prompt.positive')">Позитивный</span>
+            <button @click="copyPrompt('positive')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
+          </div>
+          <textarea x-model="positivePrompt" readonly rows="3" class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono"></textarea>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-semibold" x-text="t('prompt.negative')">Негативный</span>
+            <button @click="copyPrompt('negative')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
+          </div>
+          <textarea x-model="negativePrompt" readonly rows="3" class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono"></textarea>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          <button @click="savePrompt()" class="px-3 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700" x-text="t('actions.save')">💾 Сохранить</button>
+          <button @click="clearAll()" class="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700" x-text="t('actions.clear')">🗑 Очистить</button>
+          <button @click="drawerOpen = !drawerOpen" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" x-text="t('actions.history')">📂 История</button>
+        </div>
+        <!-- Tag images gallery -->
+        <template x-if="positiveChips.length > 0 || negativeChips.length > 0">
+          <div class="pt-3 border-t border-gray-200 dark:border-dark-600">
+            <div class="text-xs font-semibold mb-2 text-gray-400 uppercase tracking-wide" x-text="t('images.title')">Изображения тегов</div>
+            <div class="flex flex-wrap gap-3 justify-center">
+              <template x-for="ch in [...positiveChips, ...negativeChips].filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)" :key="ch.name">
+                <div class="flex flex-col items-center gap-1" x-data="{ err: false }" x-show="!err">
+                  <img :src="'/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:128px;height:128px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
+                  <span class="text-[10px] text-gray-500 truncate max-w-32 text-center" x-text="ch.name"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+    </main>
+  </div>
+
+  <!-- Drawer -->
+  <div x-show="drawerOpen" class="fixed inset-0 z-50 flex justify-end" @click.self="drawerOpen = false">
+    <div class="absolute inset-0 bg-black/30"></div>
+    <div class="relative w-96 bg-white dark:bg-dark-700 h-full shadow-xl flex flex-col" @click.stop>
+      <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-dark-600">
+        <div class="flex gap-2">
+          <button @click="drawerTab = 'history'" :class="drawerTab === 'history' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-dark-600'" class="px-3 py-1 text-sm rounded" x-text="t('drawer.title.history')">История</button>
+          <button @click="drawerTab = 'favorites'" :class="drawerTab === 'favorites' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-dark-600'" class="px-3 py-1 text-sm rounded" x-text="t('drawer.title.favorites')">Избранное</button>
+        </div>
+        <button @click="drawerOpen = false" class="text-lg">&times;</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-3">
+        <template x-if="drawerTab === 'history'">
+          <div>
+            <template x-for="p in history" :key="p.id">
+              <div class="p-2 mb-2 border rounded border-gray-200 dark:border-dark-600 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-600" @click="loadPrompt(p)">
+                <div x-text="p.name || t('drawer.prompt.unnamed')" class="font-medium"></div>
+                <div class="text-xs text-gray-400 truncate" x-text="promptPreview(p.positive_text)"></div>
+                <div class="text-xs text-gray-400 mt-1" x-text="p.created_at"></div>
+              </div>
+            </template>
+            <div x-show="history.length === 0" class="text-sm text-gray-400 text-center py-8" x-text="t('drawer.history.empty')">История пуста</div>
+          </div>
+        </template>
+        <template x-if="drawerTab === 'favorites'">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2" x-text="t('drawer.fav.tags')">Избранные теги</div>
+            <template x-if="favorites.length === 0">
+              <div class="text-sm text-gray-400 text-center py-4" x-text="t('drawer.favorites.empty')">Нет избранных тегов</div>
+            </template>
+            <div class="flex flex-wrap gap-1.5 mb-4" x-show="favorites.length > 0">
+              <template x-for="f in favorites" :key="f.tag_name">
+                <span class="tag-pill" :class="selectedClass(f.tag_name)" @click="copyTagName(f.tag_name)">
+                  <span x-text="f.tag_name"></span>
+                  <button class="btn btn-fav" @click.stop="toggleFavorite(f)" :title="t('tag.fav.remove')">★</button>
+                  <button class="btn btn-pos" @click.stop="addTag(f)" :title="t('custom.to.pos')">+</button>
+                  <button class="btn btn-neg" @click.stop="addNegativeTag(f)" :title="t('custom.to.neg')">−</button>
+                </span>
+              </template>
+            </div>
+            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2" x-text="t('drawer.fav.prompts')">Избранные промпты</div>
+            <template x-for="p in favoritePrompts" :key="p.id">
+              <div class="p-2 mb-2 border rounded border-gray-200 dark:border-dark-600 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-600" @click="loadPrompt(p)">
+                <div x-text="p.name" class="font-medium"></div>
+                <div class="text-xs text-gray-400 truncate" x-text="promptPreview(p.positive_text)"></div>
+                <div class="text-xs text-gray-400 mt-1" x-text="p.created_at"></div>
+              </div>
+            </template>
+            <div x-show="favoritePrompts.length === 0" class="text-sm text-gray-400 text-center py-8" x-text="t('drawer.prompts.empty')">Нет сохранённых промптов</div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save modal -->
+  <div x-show="saveModalOpen" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="saveModalOpen = false">
+    <div class="absolute inset-0 bg-black/30"></div>
+    <div class="relative bg-white dark:bg-dark-700 rounded-lg shadow-xl p-6 w-96">
+      <h3 class="text-lg font-medium mb-4" x-text="t('modal.save.title')">Сохранить промпт</h3>
+      <input type="text" x-model="savePromptName" :placeholder="t('modal.save.placeholder')" class="w-full border rounded px-3 py-2 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 mb-4">
+      <div class="flex gap-2 justify-end">
+        <button @click="saveModalOpen = false" class="px-4 py-2 text-sm bg-gray-200 dark:bg-dark-600 rounded" x-text="t('actions.cancel')">Отмена</button>
+        <button @click="doSavePrompt()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" x-text="t('modal.save.confirm')">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tree loading modal -->
+  <div x-show="treeModal" class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative bg-white dark:bg-dark-700 rounded-lg shadow-xl p-6 w-80 text-center">
+      <div class="text-sm font-medium mb-3" x-text="t('modal.loading.title')">Загрузка тегов...</div>
+      <div class="w-full bg-gray-200 dark:bg-dark-500 rounded-full h-2.5">
+        <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-150" :style="'width: ' + treeModalProgress + '%'"></div>
+      </div>
+      <div class="text-xs text-gray-400 mt-2" x-text="treeModalProgress + '%'"></div>
+    </div>
+  </div>
+
+  <!-- Tag image preview -->
+  <div x-show="tagImage" class="fixed z-50 pointer-events-none" :style="'left: ' + tagImagePos.x + 'px; top: ' + tagImagePos.y + 'px'">
+    <img :src="tagImage" class="max-w-60 max-h-60 rounded shadow-xl border border-gray-300 dark:border-dark-500">
+  </div>
+
+  <div x-show="toastVisible" class="toast">
+    <span x-text="toastText"></span>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

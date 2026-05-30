@@ -1,0 +1,5 @@
+{
+  "port": 8080,
+  "tags_path": "./tags",
+  "db_path": "./data.db"
+}

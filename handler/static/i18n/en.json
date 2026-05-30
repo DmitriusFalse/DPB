@@ -1,0 +1,82 @@
+{
+  "app.title": "Danbooru Prompt Builder",
+  "app.sync": "⟳ Rescan",
+  "app.syncing": "⟳ Scanning...",
+
+  "theme.auto": "Auto",
+  "theme.dark": "Dark",
+  "theme.light": "Light",
+
+  "packs.label": "Packs",
+
+  "header.packs": "Manage Packs",
+
+  "lang.switch": "Русский",
+
+  "const.quality": "Quality Tags",
+  "const.sources": "Source Tags",
+  "const.rating": "Rating Tags",
+  "const.pose": "Poses & Actions",
+  "const.scene": "Scene & Settings",
+  "const.style": "Style & Lighting",
+  "const.negative": "Negative Tags",
+
+  "presets.label": "Presets",
+
+  "search.placeholder": "Search tags... (Ctrl+/)",
+
+  "fav.title": "★ Favorites",
+  "fav.empty": "No favorite tags",
+
+  "tag.fav.add": "Add to favorites",
+  "tag.fav.remove": "Remove from favorites",
+  "tag.pos": "Positive",
+  "tag.neg": "Negative",
+  "tag.add.pos": "Add to positive",
+  "tag.add.neg": "Add to negative",
+
+  "workspace.positive": "Positive tags",
+  "workspace.negative": "Negative tags",
+
+  "custom.placeholder": "Custom tag",
+  "custom.to.pos": "To positive",
+  "custom.to.neg": "To negative",
+
+  "prompt.positive": "Positive",
+  "prompt.negative": "Negative",
+  "prompt.copy": "📋",
+
+  "actions.save": "💾 Save",
+  "actions.clear": "🗑 Clear",
+  "actions.history": "📂 History",
+  "actions.cancel": "Cancel",
+
+  "images.title": "Tag images",
+
+  "drawer.title.history": "History",
+  "drawer.title.favorites": "Favorites",
+  "drawer.history.empty": "History is empty",
+  "drawer.favorites.empty": "No favorite tags",
+  "drawer.prompts.empty": "No saved prompts",
+  "drawer.prompt.unnamed": "(unnamed)",
+  "drawer.fav.tags": "Favorite tags",
+  "drawer.fav.prompts": "Favorite prompts",
+
+  "modal.save.title": "Save prompt",
+  "modal.save.placeholder": "Prompt name",
+  "modal.save.confirm": "Save",
+  "modal.loading.title": "Loading tags...",
+
+  "toast.copied": "Copied: ",
+
+  "packs.title": "Manage Packs",
+  "packs.back": "Back to main",
+  "packs.name": "Name",
+  "packs.path": "Path",
+  "packs.created": "Created",
+  "packs.actions": "Actions",
+  "packs.rescan": "Rescan",
+  "packs.delete": "Delete",
+  "packs.empty": "No packs",
+  "packs.confirm_delete": "Delete pack \"{name}\" from DB?"
+}

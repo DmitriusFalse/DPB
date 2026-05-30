@@ -1,0 +1,82 @@
+{
+  "app.title": "Danbooru Prompt Builder",
+  "app.sync": "⟳ Пересканировать",
+  "app.syncing": "⟳ Сканирование...",
+
+  "theme.auto": "Авто",
+  "theme.dark": "Тёмная",
+  "theme.light": "Светлая",
+
+  "packs.label": "Наборы",
+
+  "header.packs": "Управление паками",
+
+  "lang.switch": "English",
+
+  "const.quality": "Теги качества",
+  "const.sources": "Теги источники",
+  "const.rating": "Теги Рейтинга",
+  "const.pose": "Позы и действия",
+  "const.scene": "Теги сцены и настройки",
+  "const.style": "Теги стиля и освещения",
+  "const.negative": "Негативные теги",
+
+  "presets.label": "Пресеты",
+
+  "search.placeholder": "Поиск тегов... (Ctrl+/)",
+
+  "fav.title": "★ Избранное",
+  "fav.empty": "Нет избранных тегов",
+
+  "tag.fav.add": "Добавить в избранное",
+  "tag.fav.remove": "Убрать из избранного",
+  "tag.pos": "Позитив",
+  "tag.neg": "Негатив",
+  "tag.add.pos": "Добавить в позитив",
+  "tag.add.neg": "Добавить в негатив",
+
+  "workspace.positive": "Позитивные теги",
+  "workspace.negative": "Негативные теги",
+
+  "custom.placeholder": "Кастомный тег",
+  "custom.to.pos": "В позитивный",
+  "custom.to.neg": "В негативный",
+
+  "prompt.positive": "Позитивный",
+  "prompt.negative": "Негативный",
+  "prompt.copy": "📋",
+
+  "actions.save": "💾 Сохранить",
+  "actions.clear": "🗑 Очистить",
+  "actions.history": "📂 История",
+  "actions.cancel": "Отмена",
+
+  "images.title": "Изображения тегов",
+
+  "drawer.title.history": "История",
+  "drawer.title.favorites": "Избранное",
+  "drawer.history.empty": "История пуста",
+  "drawer.favorites.empty": "Нет избранных тегов",
+  "drawer.prompts.empty": "Нет сохранённых промптов",
+  "drawer.prompt.unnamed": "(без имени)",
+  "drawer.fav.tags": "Избранные теги",
+  "drawer.fav.prompts": "Избранные промпты",
+
+  "modal.save.title": "Сохранить промпт",
+  "modal.save.placeholder": "Название промпта",
+  "modal.save.confirm": "Сохранить",
+  "modal.loading.title": "Загрузка тегов...",
+
+  "toast.copied": "Скопировано: ",
+
+  "packs.title": "Управление паками",
+  "packs.back": "На главную",
+  "packs.name": "Название",
+  "packs.path": "Путь",
+  "packs.created": "Создан",
+  "packs.actions": "Действия",
+  "packs.rescan": "Пересканировать",
+  "packs.delete": "Удалить",
+  "packs.empty": "Нет паков",
+  "packs.confirm_delete": "Удалить пак \"{name}\" из БД?"
+}
