@@ -123,6 +123,9 @@ function app() {
       this.loadConstants();
       this.updateChipNames();
       this.loadPacks();
+      document.addEventListener('pwa-installable', () => {
+        this.pwaInstallable = true;
+      });
     },
 
     // ─── Packs ───
@@ -595,12 +598,6 @@ function app() {
       if (this.theme === 'dark') return true;
       if (this.theme === 'light') return false;
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    },
-
-    init() {
-      document.addEventListener('pwa-installable', () => {
-        this.pwaInstallable = true;
-      });
     },
 
     loadAll() {
