@@ -63,6 +63,10 @@ go test ./...
 - **Frontend**: Alpine.js, CSS custom properties (theming)
 - **Database**: SQLite (WAL, foreign keys) — tables: packs, files, tags, favorite_tags, saved_prompts, tag_presets
 
+## Support
+
+If you find this app useful, consider tossing a coin on [Boosty](https://boosty.to/sir.geronis/donate). It was built just for fun, and your support is appreciated!
+
 ---
 
 # Danbooru Prompt Builder
@@ -129,3 +133,7 @@ go test ./...
 - **Backend**: Go, net/http, SQLite (mattn/go-sqlite3), systray
 - **Frontend**: Alpine.js, CSS custom properties (темизация)
 - **База данных**: SQLite (WAL, foreign keys) — таблицы: packs, files, tags, favorite_tags, saved_prompts, tag_presets
+
+## Поддержка
+
+Если приложение оказалось полезным, можно подкинуть копейку на [Boosty](https://boosty.to/sir.geronis/donate). Оно сделано в удовольствие, но любая поддержка греет душу!
