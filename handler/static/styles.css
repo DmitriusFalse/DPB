@@ -462,12 +462,14 @@ button { font-family: inherit; cursor: pointer; color: inherit; background: none
 .donate-link {
   color: var(--c-text-400);
   text-decoration: none;
+}
+.donate-link .donate-heart {
   transition: color 0.2s, filter 0.2s;
 }
-.donate-link:hover {
+.donate-link:hover .donate-heart {
   color: var(--c-red-500);
-  filter: drop-shadow(0 0 6px rgba(255, 200, 0, 0.6));
+  filter: drop-shadow(0 0 5px rgba(255, 200, 50, 0.7));
 }
-.dark .donate-link:hover {
+.dark .donate-link:hover .donate-heart {
   color: var(--c-red-400);
 }
