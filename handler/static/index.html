@@ -42,12 +42,12 @@
     </button>
     <div class="flex-1"></div>
     <div class="flex gap-1 items-center">
-      <a href="https://boosty.to/sir.geronis/donate" target="_blank" rel="noopener" class="donate-link inline-flex items-center gap-1 px-2 py-1 rounded transition-all" :title="t('donate.title')">
-        <svg class="donate-heart" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <a href="https://boosty.to/sir.geronis/donate" target="_blank" rel="noopener" class="donate-link inline-flex items-center gap-1 px-2 py-1 rounded" :title="t('donate.title')">
         <span class="flex flex-col text-[10px] leading-tight">
           <span x-text="t('donate.short1')">Подкинуть копейку</span>
           <span x-text="t('donate.short2')">на Boosty</span>
         </span>
+        <svg class="donate-heart" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
       </a>
       <span @click="theme='auto';localStorage.setItem('theme','auto')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='auto' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.auto')">◐</span>
       <span @click="theme='dark';localStorage.setItem('theme','dark')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='dark' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.dark')">☾</span>
