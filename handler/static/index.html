@@ -184,7 +184,7 @@
     </aside>
 
     <!-- Workspace — 30% -->
-    <main class="flex-[3] min-w-0 flex flex-col overflow-hidden">
+    <main class="flex-[3] min-w-[30%] flex flex-col overflow-hidden">
       <!-- Chips -->
       <div class="p-3 border-b border-gray-200 dark:border-dark-600 overflow-y-auto max-h-48">
         <div class="text-xs font-semibold mb-1 flex items-center gap-2">
@@ -229,14 +229,14 @@
             <span class="text-xs font-semibold" x-text="t('prompt.positive')">Позитивный</span>
             <button @click="copyPrompt('positive')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
           </div>
-          <textarea x-model="positivePrompt" readonly rows="3" class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono"></textarea>
+          <textarea x-model="positivePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:300px"></textarea>
         </div>
         <div>
           <div class="flex items-center justify-between mb-1">
             <span class="text-xs font-semibold" x-text="t('prompt.negative')">Негативный</span>
             <button @click="copyPrompt('negative')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
           </div>
-          <textarea x-model="negativePrompt" readonly rows="3" class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono"></textarea>
+          <textarea x-model="negativePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:300px"></textarea>
         </div>
         <div class="flex flex-wrap gap-1.5">
           <button @click="savePrompt()" class="px-3 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700" x-text="t('actions.save')">💾 Сохранить</button>
