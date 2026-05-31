@@ -1,0 +1,30 @@
+{
+  "Anime": {
+    "positive": ["score_9", "score_8_up", "score_7_up", "score_6_up", "score_5_up", "BREAK", "1girl", "solo", "anime_style", "manga", "anime_coloring", "japanese_art"],
+    "negative": ["western", "cartoon", "realistic", "photorealistic"]
+  },
+  "Cartoon": {
+    "positive": ["score_9", "score_8_up", "score_7_up", "score_6_up", "score_5_up", "BREAK", "cartoon", "cartoon_style", "disney", "western", "comic", "toon"],
+    "negative": ["realistic", "photorealistic", "anime"]
+  },
+  "Realistic": {
+    "positive": ["score_9", "score_8_up", "score_7_up", "score_6_up", "score_5_up", "BREAK", "photorealistic", "realistic", "photo", "photography", "detailed", "sharp_focus", "high_res"],
+    "negative": ["cartoon", "anime", "sketch", "lineart"]
+  },
+  "Portrait": {
+    "positive": ["score_9", "score_8_up", "score_7_up", "score_6_up", "score_5_up", "BREAK", "portrait", "face", "close-up", "upper_body", "looking_at_viewer", "detailed_face", "expression"],
+    "negative": ["full_body", "wide_shot", "landscape"]
+  },
+  "Outdoor": {
+    "positive": ["score_9", "score_8_up", "score_7_up", "score_6_up", "score_5_up", "BREAK", "outdoor", "nature", "sky", "clouds", "sunlight", "scenery", "landscape", "tree"],
+    "negative": ["indoor", "wall", "dark", "night"]
+  },
+  "Minimal": {
+    "positive": ["score_9", "score_8_up", "score_7_up", "BREAK", "minimalist", "simple_background", "white_background", "plain_background", "monochrome"],
+    "negative": ["detailed_background", "complex", "crowded"]
+  },
+  "Quality Only": {
+    "positive": ["score_9", "score_8_up", "score_7_up", "score_6_up", "score_5_up", "BREAK", "best_quality", "high_quality", "high_res", "masterpiece", "detailed"],
+    "negative": ["low_quality", "worst_quality", "bad_art"]
+  }
+}

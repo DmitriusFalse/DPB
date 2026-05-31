@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
@@ -12,6 +13,7 @@ import (
 	"danbooru-prompt-builder/config"
 	"danbooru-prompt-builder/database"
 	"danbooru-prompt-builder/handler"
+	"danbooru-prompt-builder/logger"
 	syncsvc "danbooru-prompt-builder/sync"
 	"danbooru-prompt-builder/tray"
 
@@ -24,9 +26,16 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	logLevel := logger.LevelError
+	if cfg.LogLevel == "debug" {
+		logLevel = logger.LevelDebug
+	}
+	logger.Init(logLevel, cfg.LogsDir)
+
 	db, err := database.Init(cfg.DBPath)
 	if err != nil {
-		log.Fatalf("Failed to init database: %v", err)
+		logger.Error("Failed to init database: %v", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
@@ -42,29 +51,25 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// HTTP server in background
 	go func() {
-		log.Printf("Server starting on http://127.0.0.1:%d", cfg.Port)
+		logger.Debug("Server starting on http://127.0.0.1:%d", cfg.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			logger.Error("Server error: %v", err)
 		}
 	}()
 
-	// On Ctrl+C → tell systray to quit so main goroutine can proceed
 	go func() {
 		<-ctx.Done()
-		log.Println("Signal received, shutting down...")
+		logger.Debug("Signal received, shutting down...")
 		systray.Quit()
 	}()
 
-	// Systray must run on main goroutine
 	configPath, _ := filepath.Abs("config.json")
 	tray.Run(cfg.Port, tray.Actions{
 		PacksPath:  cfg.TagsPath,
 		ConfigPath: configPath,
 	})
 
-	// After systray.Run returns (user clicked Exit or Ctrl+C)
-	log.Println("Shutting down server...")
+	logger.Debug("Shutting down server...")
 	server.Shutdown(context.Background())
 }

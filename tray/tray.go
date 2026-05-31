@@ -3,9 +3,9 @@ package tray
 import (
 	_ "embed"
 	"fmt"
-	"log"
 	"os/exec"
 
+	"danbooru-prompt-builder/logger"
 	"github.com/getlantern/systray"
 )
 
@@ -29,7 +29,7 @@ func Run(port int, actions Actions) {
 			mOpen := systray.AddMenuItem("Открыть", fmt.Sprintf("http://127.0.0.1:%d", port))
 			systray.AddSeparator()
 			mPacks := systray.AddMenuItem("Папка наборов", "")
-	mConfig := systray.AddMenuItem("Настройки", "")
+		mConfig := systray.AddMenuItem("Настройки", "")
 			systray.AddSeparator()
 			mQuit := systray.AddMenuItem("Выход", "Закрыть приложение")
 
@@ -64,20 +64,20 @@ func openBrowser(url string) {
 	var cmd *exec.Cmd
 	cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
 	if err := cmd.Start(); err != nil {
-		log.Printf("Failed to open browser: %v", err)
+		logger.Error("Failed to open browser: %v", err)
 	}
 }
 
 func openFolder(path string) {
 	cmd := exec.Command("explorer", path)
 	if err := cmd.Start(); err != nil {
-		log.Printf("Failed to open folder: %v", err)
+		logger.Error("Failed to open folder: %v", err)
 	}
 }
 
 func openInNotepad(path string) {
 	cmd := exec.Command("notepad.exe", path)
 	if err := cmd.Start(); err != nil {
-		log.Printf("Failed to open notepad: %v", err)
+		logger.Error("Failed to open notepad: %v", err)
 	}
 }

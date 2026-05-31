@@ -58,6 +58,8 @@ var migrations = []string{
 	`CREATE INDEX IF NOT EXISTS idx_tags_pack ON tags(pack_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(tag_name)`,
 	`CREATE INDEX IF NOT EXISTS idx_tags_category ON tags(category_name, subcategory_name)`,
+	`CREATE INDEX IF NOT EXISTS idx_tags_file ON tags(file_id)`,
+	`CREATE INDEX IF NOT EXISTS idx_tags_file_tag ON tags(file_id, tag_name)`,
 }
 
 func Init(dbPath string) (*sql.DB, error) {

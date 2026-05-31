@@ -1,5 +1,7 @@
 {
   "port": 8080,
   "tags_path": "./tags",
-  "db_path": "./data.db"
+  "db_path": "./data.db",
+  "log_level": "debug",
+  "logs_dir": "./logs"
 }

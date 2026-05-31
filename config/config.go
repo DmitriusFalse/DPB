@@ -11,6 +11,8 @@ type Config struct {
 	Port     int    `json:"port"`
 	TagsPath string `json:"tags_path"`
 	DBPath   string `json:"db_path"`
+	LogLevel string `json:"log_level"`
+	LogsDir  string `json:"logs_dir"`
 }
 
 func Load(path string) (*Config, error) {
@@ -40,9 +42,16 @@ func Load(path string) (*Config, error) {
 	if cfg.DBPath == "" {
 		cfg.DBPath = "./data.db"
 	}
+	if cfg.LogsDir == "" {
+		cfg.LogsDir = "./logs"
+	}
+	if cfg.LogLevel == "" {
+		cfg.LogLevel = "error"
+	}
 
 	cfg.TagsPath = resolvePath(cfgDir, cfg.TagsPath)
 	cfg.DBPath = resolvePath(cfgDir, cfg.DBPath)
+	cfg.LogsDir = resolvePath(cfgDir, cfg.LogsDir)
 
 	return cfg, nil
 }

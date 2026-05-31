@@ -3,9 +3,9 @@ package sync
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	"danbooru-prompt-builder/database"
+	"danbooru-prompt-builder/logger"
 )
 
 type Service struct {
@@ -21,7 +21,7 @@ func NewService(db *sql.DB) *Service {
 }
 
 func (s *Service) Sync(tagsPath string) error {
-	log.Println("Syncing tags from", tagsPath)
+	logger.Debug("Syncing tags from %s", tagsPath)
 
 	packs, err := s.scanner.Scan(tagsPath)
 	if err != nil {
@@ -45,7 +45,7 @@ func (s *Service) Sync(tagsPath string) error {
 			if err != nil {
 				return fmt.Errorf("create pack %s: %w", pack.Name, err)
 			}
-			log.Printf("  New pack: %s", pack.Name)
+			logger.Debug("  New pack: %s", pack.Name)
 		}
 		delete(existingMap, pack.Name)
 
@@ -55,13 +55,13 @@ func (s *Service) Sync(tagsPath string) error {
 	}
 
 	for _, stalePack := range existingMap {
-		log.Printf("  Removing stale pack: %s", stalePack.Name)
+		logger.Debug("  Removing stale pack: %s", stalePack.Name)
 		if err := s.repo.DeletePack(stalePack.ID); err != nil {
 			return fmt.Errorf("delete pack %s: %w", stalePack.Name, err)
 		}
 	}
 
-	log.Println("Sync complete")
+	logger.Debug("Sync complete")
 	return nil
 }
 
@@ -85,7 +85,7 @@ func (s *Service) syncFiles(pack *database.Pack, files []FileResult) error {
 			if err := s.repo.DeleteFile(dbFile.ID); err != nil {
 				return err
 			}
-			log.Printf("    Removed stale file: %s", dbFile.FileName)
+			logger.Debug("    Removed stale file: %s", dbFile.FileName)
 		}
 	}
 
@@ -96,7 +96,7 @@ func (s *Service) syncFiles(pack *database.Pack, files []FileResult) error {
 		}
 
 		if existing != nil && existing.FileHash == file.Hash {
-			log.Printf("    Unchanged %s", file.FileName)
+			logger.Debug("    Unchanged %s", file.FileName)
 			continue
 		}
 
@@ -170,7 +170,7 @@ func (s *Service) syncFiles(pack *database.Pack, files []FileResult) error {
 			ins = len(tags)
 		}
 
-		log.Printf("    Synced %s (+%d -%d)", file.FileName, ins, del)
+		logger.Debug("    Synced %s (+%d -%d)", file.FileName, ins, del)
 	}
 
 	return nil

@@ -21,6 +21,26 @@ function app() {
       }
     },
 
+    async loadPresets() {
+      try {
+        const res = await fetch('/static/presets.json');
+        this.presetData = await res.json();
+      } catch (e) {
+        console.error('Failed to load presets:', e);
+        this.presetData = {};
+      }
+    },
+
+    async loadConstants() {
+      try {
+        const res = await fetch('/static/constants.json');
+        this.constantTags = await res.json();
+      } catch (e) {
+        console.error('Failed to load constants:', e);
+        this.constantTags = [];
+      }
+    },
+
     // Toast
     toastText: '',
     toastVisible: false,
@@ -50,72 +70,7 @@ function app() {
     // Constant tags
     constOpen: {},
     constSubOpen: {},
-    constantTags: [
-      {
-        name: 'Теги качества',
-        tkey: 'const.quality',
-        tags: ['score_9', 'score_8_up', 'score_7_up', 'score_6_up', 'score_5_up', 'score_4_up', 'score_6', 'score_5', 'score_4']
-      },
-      {
-        name: 'Теги источники',
-        tkey: 'const.sources',
-        tags: ['source_anime', 'source_cartoon', 'source_furry', 'source_pony', 'source_rule34']
-      },
-      {
-        name: 'Теги Рейтинга',
-        tkey: 'const.rating',
-        subcat: 'rating',
-        tags: ['rating_safe', 'rating_questionable', 'rating_explicit']
-      },
-      {
-        name: 'Позы и действия',
-        tkey: 'const.pose',
-        subcategories: [
-          { name: 'Standing', tags: ['standing', 'leaning', 'leaning_against_wall', 'leaning_forward', 'leaning_back', 'contrapposto', 'hands_on_hips', 'hand_on_hip', 'arms_crossed', 'arms_up', 'arms_behind_back', 'arms_behind_head', 'hand_on_face', 'hand_on_chin', 'hand_on_chest', 'hand_in_hair', 'hand_in_pocket', 'peace_sign', 'finger_to_lips'] },
-          { name: 'Sitting', tags: ['sitting', 'sitting_on_chair', 'sitting_on_floor', 'sitting_on_bed', 'sitting_on_edge', 'seiza', 'indian_style', 'crossed_legs', 'legs_together', 'one_knee_up', 'hugging_knees', 'straddling', 'lap_sitting'] },
-          { name: 'Lying', tags: ['lying_down', 'lying_on_back', 'lying_on_side', 'lying_on_stomach', 'prone', 'supine', 'fetal_position', 'sprawled'] },
-          { name: 'Other poses', tags: ['kneeling', 'crouching', 'squatting', 'bending_over', 'on_all_fours', 'crawling', 'stretching', 'arching_back', 'twisting', 'turning_around', 'spread_legs', 'legs_apart'] },
-          { name: 'Actions', tags: ['walking', 'running', 'jumping', 'dancing', 'fighting', 'eating', 'drinking', 'reading', 'sleeping', 'bathing', 'swimming', 'holding_phone', 'holding_cup', 'typing', 'pointing', 'waving', 'hugging', 'kissing', 'posing', 'modeling', 'working_out', 'yoga', 'smoking'] },
-          { name: 'Head & gaze', tags: ['head_tilt', 'head_turn', 'looking_at_viewer', 'looking_away', 'looking_back', 'looking_up', 'looking_down', 'looking_to_the_side', 'over_shoulder', 'profile', 'three-quarter_view', 'eye_contact', 'averting_eyes'] },
-          { name: 'NSFW — Pose / Action', tags: ['sex', 'penetration', 'vaginal', 'anal', 'oral', 'blowjob', 'deepthroat', 'handjob', 'fingering', 'masturbation', 'riding', 'missionary', 'doggystyle', 'cowgirl', 'reverse_cowgirl', 'standing_sex', 'wall_sex', 'shower_sex', 'tribadism', 'sixty-nine', 'cum', 'cumshot', 'cum_in_pussy', 'cum_on_face', 'cum_on_body', 'cum_on_breasts', 'creampie', 'facial', 'spread_pussy', 'presenting', 'ass_up', 'face_down_ass_up', 'bent_over', 'grinding', 'dry_humping', 'lap_dance', 'striptease', 'groping', 'fondling', 'aroused', 'orgasm', 'wet', 'sweat', 'sweaty', 'afterglow', 'post-coital', 'submissive', 'dominant', 'lustful', 'willing', 'reluctant'] }
-        ]
-      },
-      {
-        name: 'Теги сцены и настройки',
-        tkey: 'const.scene',
-        subcategories: [
-          { name: 'Location type', tags: ['indoors', 'outdoors', 'urban', 'rural', 'suburban', 'underwater', 'space'] },
-          { name: 'Indoor', tags: ['bedroom', 'bathroom', 'kitchen', 'living_room', 'library', 'office', 'studio', 'classroom', 'gym', 'pool', 'locker_room', 'bar', 'restaurant', 'cafe', 'hotel_room', 'hospital', 'elevator', 'staircase', 'hallway', 'balcony', 'sauna', 'dressing_room'] },
-          { name: 'Furniture / Props', tags: ['bed', 'couch', 'sofa', 'chair', 'desk', 'table', 'bathtub', 'shower', 'window', 'doorway', 'mirror', 'curtains', 'pillows', 'blanket', 'rug', 'bookshelf'] },
-          { name: 'Outdoor', tags: ['beach', 'tropical_beach', 'forest', 'woods', 'park', 'garden', 'flower_garden', 'street', 'alley', 'rooftop', 'bridge', 'pier', 'mountain', 'cliff', 'lake', 'river', 'ocean', 'waterfall', 'field', 'meadow', 'desert', 'cave', 'island'] },
-          { name: 'Urban', tags: ['cityscape', 'skyline', 'downtown', 'skyscraper', 'neon_city', 'market', 'shopping_mall', 'subway', 'train_station', 'parking_lot'] },
-          { name: 'Fantasy', tags: ['fantasy', 'sci-fi', 'cyberpunk', 'steampunk', 'medieval', 'futuristic', 'post-apocalyptic', 'castle', 'palace', 'throne_room', 'dungeon', 'cathedral', 'temple', 'ruins', 'magical', 'spaceship'] },
-          { name: 'Time / Weather', tags: ['day', 'night', 'sunset', 'sunrise', 'dawn', 'dusk', 'golden_hour', 'blue_hour', 'twilight', 'overcast', 'cloudy', 'clear_sky', 'starry_sky', 'moonlight', 'full_moon', 'rain', 'snow', 'fog', 'mist', 'storm', 'cherry_blossoms', 'autumn_leaves', 'spring', 'summer', 'winter'] }
-        ]
-      },
-      {
-        name: 'Теги стиля и освещения',
-        tkey: 'const.style',
-        subcategories: [
-          { name: 'Lighting', tags: ['natural_lighting', 'soft_lighting', 'hard_lighting', 'dramatic_lighting', 'volumetric_lighting', 'backlighting', 'rim_lighting', 'studio_lighting', 'cinematic_lighting', 'sunlight', 'dappled_sunlight', 'moonlight', 'candlelight', 'firelight', 'neon_lights', 'ambient_lighting', 'harsh_lighting', 'silhouette', 'god_rays', 'spotlight', 'colored_lighting', 'warm_lighting', 'cool_lighting', 'chiaroscuro', 'rembrandt_lighting'] },
-          { name: 'Render quality', tags: ['photorealistic', 'realistic', 'hyper_realistic', 'ultra_realistic', 'detailed', 'highly_detailed', 'intricate_details', 'sharp_focus', '8k', '4k', 'hdr', 'vibrant_colors', 'rich_colors', 'pastel_colors', 'muted_colors', 'monochrome', 'sepia', 'high_contrast', 'low_contrast', 'dark_theme'] },
-          { name: 'Art style', tags: ['digital_art', 'digital_painting', 'concept_art', 'illustration', 'painting', 'oil_painting', 'watercolor', 'cel_shading', 'flat_color', 'lineart', 'sketch', 'anime_style', 'manga_style', 'comic_style', '3d_render', 'photo', 'photograph', 'fashion_photography', 'portrait_photography', 'editorial', 'magazine_cover', 'art_nouveau', 'impressionist', 'surreal', 'minimalist', 'baroque', 'renaissance'] },
-          { name: 'Mood', tags: ['cinematic', 'epic', 'peaceful', 'serene', 'melancholic', 'mysterious', 'romantic', 'intimate', 'sensual', 'eerie', 'whimsical', 'nostalgic', 'vintage', 'retro', 'dreamy', 'ethereal', 'gritty', 'elegant', 'cozy', 'warm_atmosphere', 'cold_atmosphere', 'dark_atmosphere', 'moody', 'atmospheric'] },
-          { name: 'Background', tags: ['simple_background', 'white_background', 'black_background', 'gradient_background', 'detailed_background', 'blurry_background', 'scenery', 'landscape', 'symmetry', 'rule_of_thirds', 'framing', 'negative_space', 'centered', 'dynamic_composition'] },
-          { name: 'Detail quality', tags: ['detailed_skin', 'skin_texture', 'skin_pores', 'smooth_skin', 'glowing_skin', 'subsurface_scattering', 'detailed_hands', 'detailed_fingers', 'perfect_hands', 'detailed_hair', 'individual_hair_strands', 'detailed_clothing', 'fabric_texture'] }
-        ]
-      },
-      {
-        name: 'Негативные теги',
-        tkey: 'const.negative',
-        subcategories: [
-          { name: 'Quality', tags: ['ugly', 'deformed', 'blurry', 'lowres', 'worst_quality', 'low_quality', 'normal_quality', 'jpeg_artifacts', 'pixelated', 'oversaturated', 'underexposed', 'overexposed', 'washed_out'] },
-          { name: 'Anatomy', tags: ['bad_anatomy', 'bad_hands', 'bad_fingers', 'bad_feet', 'missing_fingers', 'extra_digit', 'fewer_digits', 'extra_limb', 'missing_limbs', 'fused_fingers', 'too_many_fingers', 'malformed_hands', 'unnatural_face', 'unnatural_body', 'imperfect_eyes', 'skewed_eyes', 'cross-eyed', 'extra_arms', 'extra_legs', 'extra_heads', 'mutated', 'disfigured', 'disproportionate', 'long_neck', 'bad_proportions'] },
-          { name: 'Artifacts', tags: ['text', 'error', 'signature', 'watermark', 'username', 'cropped', 'border', 'frame', 'letterbox', 'artifacts', 'noise', 'chromatic_aberration'] },
-          { name: 'Anti-style', tags: ['sketch', 'painting', 'drawing', '3d', 'cgi', 'render', 'cartoon', 'anime', 'comic', 'manga', 'low_detail', 'flat', 'simple', 'amateur', 'stock_photo'] }
-        ]
-      }
-    ],
+    constantTags: [],
 
     // Favorites
     favorites: [],
@@ -128,37 +83,8 @@ function app() {
     // Custom input
     customTag: '',
 
-    // Presets (hardcoded)
-    presetData: {
-      'Anime': {
-        positive: ['score_9', 'score_8_up', 'score_7_up', 'score_6_up', 'score_5_up', 'BREAK', '1girl', 'solo', 'anime_style', 'manga', 'anime_coloring', 'japanese_art'],
-        negative: ['western', 'cartoon', 'realistic', 'photorealistic']
-      },
-      'Cartoon': {
-        positive: ['score_9', 'score_8_up', 'score_7_up', 'score_6_up', 'score_5_up', 'BREAK', 'cartoon', 'cartoon_style', 'disney', 'western', 'comic', 'toon'],
-        negative: ['realistic', 'photorealistic', 'anime']
-      },
-      'Realistic': {
-        positive: ['score_9', 'score_8_up', 'score_7_up', 'score_6_up', 'score_5_up', 'BREAK', 'photorealistic', 'realistic', 'photo', 'photography', 'detailed', 'sharp_focus', 'high_res'],
-        negative: ['cartoon', 'anime', 'sketch', 'lineart']
-      },
-      'Portrait': {
-        positive: ['score_9', 'score_8_up', 'score_7_up', 'score_6_up', 'score_5_up', 'BREAK', 'portrait', 'face', 'close-up', 'upper_body', 'looking_at_viewer', 'detailed_face', 'expression'],
-        negative: ['full_body', 'wide_shot', 'landscape']
-      },
-      'Outdoor': {
-        positive: ['score_9', 'score_8_up', 'score_7_up', 'score_6_up', 'score_5_up', 'BREAK', 'outdoor', 'nature', 'sky', 'clouds', 'sunlight', 'scenery', 'landscape', 'tree'],
-        negative: ['indoor', 'wall', 'dark', 'night']
-      },
-      'Minimal': {
-        positive: ['score_9', 'score_8_up', 'score_7_up', 'BREAK', 'minimalist', 'simple_background', 'white_background', 'plain_background', 'monochrome'],
-        negative: ['detailed_background', 'complex', 'crowded']
-      },
-      'Quality Only': {
-        positive: ['score_9', 'score_8_up', 'score_7_up', 'score_6_up', 'score_5_up', 'BREAK', 'best_quality', 'high_quality', 'high_res', 'masterpiece', 'detailed'],
-        negative: ['low_quality', 'worst_quality', 'bad_art']
-      }
-    },
+    // Presets
+    presetData: {},
 
     // Drawer
     drawerOpen: false,
@@ -174,6 +100,8 @@ function app() {
 
     init() {
       this.loadTranslations();
+      this.loadPresets();
+      this.loadConstants();
       this.updateChipNames();
       this.loadPacks();
     },
