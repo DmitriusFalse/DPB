@@ -141,7 +141,7 @@
     function settingsApp() {
       return {
         theme: localStorage.getItem('theme') || 'auto',
-        lang: localStorage.getItem('lang') || (navigator.language || '').startsWith('ru') ? 'ru' : 'en',
+        lang: localStorage.getItem('lang') || ((navigator.language || '').startsWith('ru') ? 'ru' : 'en'),
         translations: {},
 
         t(key) {

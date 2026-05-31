@@ -6,7 +6,7 @@ function app() {
     theme: localStorage.getItem('theme') || 'auto',
 
     // i18n
-    lang: localStorage.getItem('lang') || (navigator.language || '').startsWith('ru') ? 'ru' : 'en',
+    lang: localStorage.getItem('lang') || ((navigator.language || '').startsWith('ru') ? 'ru' : 'en'),
     translations: {},
 
     t(key) {
