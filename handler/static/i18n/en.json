@@ -9,8 +9,6 @@
 
   "packs.label": "Packs",
 
-  "header.packs": "Manage Packs",
-
   "settings.title": "Settings",
   "settings.app_settings": "App Settings",
   "settings.port": "Port",
@@ -20,8 +18,6 @@
   "settings.logs_dir": "Logs Dir",
   "settings.packs": "Pack Management",
   "settings.back": "Back",
-
-  "lang.switch": "Русский",
 
   "const.quality": "Quality Tags",
   "const.sources": "Source Tags",
@@ -42,8 +38,6 @@
   "tag.fav.remove": "Remove from favorites",
   "tag.pos": "Positive",
   "tag.neg": "Negative",
-  "tag.add.pos": "Add to positive",
-  "tag.add.neg": "Add to negative",
 
   "workspace.positive": "Positive tags",
   "workspace.negative": "Negative tags",
@@ -79,12 +73,6 @@
 
   "toast.copied": "Copied: ",
 
-  "packs.title": "Manage Packs",
-  "packs.back": "Back to main",
-  "packs.name": "Name",
-  "packs.path": "Path",
-  "packs.created": "Created",
-  "packs.actions": "Actions",
   "packs.rescan": "Rescan",
   "packs.delete": "Delete",
   "packs.empty": "No packs",

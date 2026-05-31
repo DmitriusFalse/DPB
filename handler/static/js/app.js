@@ -80,7 +80,7 @@ function app() {
     // Tree
     tree: [],
     treeOpen: {},
-    subOpen: {},
+
     treeModal: false,
     treeModalProgress: 0,
 
@@ -200,48 +200,6 @@ function app() {
           }
         }
       }
-    },
-
-    async toggleSubcategory(cat, sub) {
-      const key = cat.name + '_' + sub.name;
-      if (!this.subOpen[key]) {
-        this.subOpen[key] = true;
-        if (!sub._tags) {
-          this.treeModal = true;
-          this.treeModalProgress = 0;
-          sub._tags = [];
-          try {
-            const res = await fetch(`/api/tags/tree?pack_id=${this.selectedPackId}&category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}&offset=0&limit=99999`);
-            const page = await res.json();
-            this.treeModalProgress = 5;
-            await this.renderTagProgressive(sub, page.tags);
-          } catch (e) {
-            console.error('toggleSubcategory:', e);
-          } finally {
-            this.treeModal = false;
-          }
-        }
-      } else {
-        this.subOpen[key] = false;
-      }
-    },
-
-    renderTagProgressive(sub, allTags) {
-      return new Promise(resolve => {
-        const total = allTags.length;
-        if (total === 0) { resolve(); return; }
-        let i = 0;
-        const batchSize = 500;
-        const step = () => {
-          if (i >= total) { resolve(); return; }
-          const batch = allTags.slice(i, i + batchSize);
-          sub._tags.push(...batch);
-          i += batchSize;
-          this.treeModalProgress = 5 + Math.round(i / total * 95);
-          requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      });
     },
 
     // ─── Search ───
@@ -642,6 +600,7 @@ function app() {
       this.loadFavorites();
       this.loadHistory();
       this.loadFavoritePrompts();
+      this.loadAutoSave();
     }
   };
 }

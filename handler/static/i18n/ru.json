@@ -9,8 +9,6 @@
 
   "packs.label": "Наборы",
 
-  "header.packs": "Управление паками",
-
   "settings.title": "Настройки",
   "settings.app_settings": "Настройки приложения",
   "settings.port": "Порт",
@@ -20,8 +18,6 @@
   "settings.logs_dir": "Папка логов",
   "settings.packs": "Управление наборами",
   "settings.back": "На главную",
-
-  "lang.switch": "English",
 
   "const.quality": "Теги качества",
   "const.sources": "Теги источники",
@@ -42,8 +38,6 @@
   "tag.fav.remove": "Убрать из избранного",
   "tag.pos": "Позитив",
   "tag.neg": "Негатив",
-  "tag.add.pos": "Добавить в позитив",
-  "tag.add.neg": "Добавить в негатив",
 
   "workspace.positive": "Позитивные теги",
   "workspace.negative": "Негативные теги",
@@ -79,12 +73,6 @@
 
   "toast.copied": "Скопировано: ",
 
-  "packs.title": "Управление паками",
-  "packs.back": "На главную",
-  "packs.name": "Название",
-  "packs.path": "Путь",
-  "packs.created": "Создан",
-  "packs.actions": "Действия",
   "packs.rescan": "Пересканировать",
   "packs.delete": "Удалить",
   "packs.empty": "Нет паков",
