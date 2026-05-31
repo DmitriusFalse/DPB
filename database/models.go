@@ -1,11 +1,18 @@
 package database
 
 type Pack struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	Path      string `json:"path"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	Path          string `json:"path"`
+	Description   string `json:"description"`
+	DescriptionRu string `json:"description_ru"`
+	Version       string `json:"version"`
+	Author        string `json:"author"`
+	Icon          string `json:"icon"`
+	NameRu        string `json:"name_ru"`
+	Categories    string `json:"categories"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
 }
 
 type File struct {

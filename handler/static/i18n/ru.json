@@ -11,6 +11,16 @@
 
   "header.packs": "Управление паками",
 
+  "settings.title": "Настройки",
+  "settings.app_settings": "Настройки приложения",
+  "settings.port": "Порт",
+  "settings.tags_path": "Путь к тегам",
+  "settings.db_path": "Путь к БД",
+  "settings.log_level": "Уровень лога",
+  "settings.logs_dir": "Папка логов",
+  "settings.packs": "Управление наборами",
+  "settings.back": "На главную",
+
   "lang.switch": "English",
 
   "const.quality": "Теги качества",
@@ -78,5 +88,9 @@
   "packs.rescan": "Пересканировать",
   "packs.delete": "Удалить",
   "packs.empty": "Нет паков",
-  "packs.confirm_delete": "Удалить пак \"{name}\" из БД?"
+  "packs.confirm_delete": "Удалить пак \"{name}\" из БД?",
+  "packs.author": "Автор",
+  "packs.categories": "Категории",
+  "settings.save": "Сохранить",
+  "settings.saved": "Настройки сохранены (требуется перезапуск для некоторых изменений)"
 }

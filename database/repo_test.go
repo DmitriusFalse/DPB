@@ -444,6 +444,107 @@ func TestPresets_UpdateExisting(t *testing.T) {
 	}
 }
 
+func TestPacks_UpdatePackMeta(t *testing.T) {
+	repo, cleanup := testRepo(t)
+	defer cleanup()
+
+	p, err := repo.CreatePack("test", "/path")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = repo.UpdatePackMeta(p.ID, "desc1", "описание1", "2.0", "author1", "🔧", "Имя", []byte(`[{"name":"cat1","file":"cat1.txt"}]`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	packs, _ := repo.GetPacks()
+	if len(packs) != 1 {
+		t.Fatalf("got %d packs", len(packs))
+	}
+
+	pack := packs[0]
+	if pack.Description != "desc1" {
+		t.Errorf("Description = %q", pack.Description)
+	}
+	if pack.DescriptionRu != "описание1" {
+		t.Errorf("DescriptionRu = %q", pack.DescriptionRu)
+	}
+	if pack.Version != "2.0" {
+		t.Errorf("Version = %q", pack.Version)
+	}
+	if pack.Author != "author1" {
+		t.Errorf("Author = %q", pack.Author)
+	}
+	if pack.Icon != "🔧" {
+		t.Errorf("Icon = %q", pack.Icon)
+	}
+	if pack.NameRu != "Имя" {
+		t.Errorf("NameRu = %q", pack.NameRu)
+	}
+	if pack.Categories != `[{"name":"cat1","file":"cat1.txt"}]` {
+		t.Errorf("Categories = %q", pack.Categories)
+	}
+}
+
+func TestPacks_UpdatePackMetaMultiple(t *testing.T) {
+	repo, cleanup := testRepo(t)
+	defer cleanup()
+
+	p1, _ := repo.CreatePack("pack1", "/p1")
+	p2, _ := repo.CreatePack("pack2", "/p2")
+
+	repo.UpdatePackMeta(p1.ID, "desc1", "", "1", "", "", "", nil)
+	repo.UpdatePackMeta(p2.ID, "desc2", "", "2", "", "", "", nil)
+
+	packs, _ := repo.GetPacks()
+	for _, p := range packs {
+		if p.Name == "pack1" && p.Description != "desc1" {
+			t.Errorf("pack1.Description = %q", p.Description)
+		}
+		if p.Name == "pack2" && p.Description != "desc2" {
+			t.Errorf("pack2.Description = %q", p.Description)
+		}
+	}
+}
+
+func TestPacks_GetPackByName_NewFields(t *testing.T) {
+	repo, cleanup := testRepo(t)
+	defer cleanup()
+
+	p, _ := repo.CreatePack("test", "/path")
+	repo.UpdatePackMeta(p.ID, "desc", "опис", "3.0", "auth", "📦", "Тест", []byte(`[{"name":"x"}]`))
+
+	found, err := repo.GetPackByName("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found == nil {
+		t.Fatal("pack not found")
+	}
+	if found.Description != "desc" {
+		t.Errorf("Description = %q", found.Description)
+	}
+	if found.DescriptionRu != "опис" {
+		t.Errorf("DescriptionRu = %q", found.DescriptionRu)
+	}
+	if found.Version != "3.0" {
+		t.Errorf("Version = %q", found.Version)
+	}
+	if found.Author != "auth" {
+		t.Errorf("Author = %q", found.Author)
+	}
+	if found.Icon != "📦" {
+		t.Errorf("Icon = %q", found.Icon)
+	}
+	if found.NameRu != "Тест" {
+		t.Errorf("NameRu = %q", found.NameRu)
+	}
+	if found.Categories != `[{"name":"x"}]` {
+		t.Errorf("Categories = %q", found.Categories)
+	}
+}
+
 func TestPacks_EmptyList(t *testing.T) {
 	repo, cleanup := testRepo(t)
 	defer cleanup()

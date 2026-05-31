@@ -56,6 +56,23 @@ function app() {
     selectedPackId: '',
     syncing: false,
 
+    get currentPack() {
+      const p = this.packs.find(p => p.id === this.selectedPackId);
+      if (!p) return { name: '', icon: '📦' };
+      return {
+        ...p,
+        name: this.lang === 'ru' && p.name_ru ? p.name_ru : p.name
+      };
+    },
+
+    tCat(categoryName) {
+      const p = this.packs.find(p => p.id === this.selectedPackId);
+      if (!p || !p.categories_list) return categoryName;
+      const cat = p.categories_list.find(c => c.name === categoryName);
+      if (this.lang === 'ru' && cat && cat.name_ru) return cat.name_ru;
+      return categoryName;
+    },
+
     // Search
     searchQuery: '',
     searchResults: [],
@@ -111,7 +128,15 @@ function app() {
     async loadPacks() {
       try {
         const res = await fetch('/api/packs');
-        this.packs = await res.json();
+        const list = await res.json();
+        for (const p of list) {
+          try {
+            p.categories_list = JSON.parse(p.categories || '[]');
+          } catch(e) {
+            p.categories_list = [];
+          }
+        }
+        this.packs = list;
         if (this.packs.length > 0 && !this.selectedPackId) {
           this.selectedPackId = this.packs[0].id;
           this.loadAll();

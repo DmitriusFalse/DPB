@@ -12,6 +12,13 @@ var migrations = []string{
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
 		path TEXT NOT NULL,
+		description TEXT NOT NULL DEFAULT '',
+		description_ru TEXT NOT NULL DEFAULT '',
+		version TEXT NOT NULL DEFAULT '',
+		author TEXT NOT NULL DEFAULT '',
+		icon TEXT NOT NULL DEFAULT '',
+		name_ru TEXT NOT NULL DEFAULT '',
+		categories TEXT NOT NULL DEFAULT '',
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	)`,

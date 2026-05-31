@@ -16,8 +16,8 @@ func handleIndex(cfg *config.Config) http.HandlerFunc {
 	}
 }
 
-func handlePacksPage() http.HandlerFunc {
+func handleSettingsPage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		serveEmbedded(w, r, "/packs.html")
+		serveEmbedded(w, r, "/settings.html")
 	}
 }

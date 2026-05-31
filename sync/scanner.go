@@ -15,9 +15,16 @@ func NewScanner() *Scanner {
 }
 
 type PackResult struct {
-	Name  string
-	Path  string
-	Files []FileResult
+	Name          string
+	Path          string
+	Description   string
+	Version       string
+	Author        string
+	Icon          string
+	NameRu        string
+	DescriptionRu string
+	Categories    []CategoryInfo
+	Files         []FileResult
 }
 
 type FileResult struct {
@@ -59,30 +66,31 @@ func (s *Scanner) Scan(tagsPath string) ([]PackResult, error) {
 }
 
 func (s *Scanner) scanPack(name, path string) (PackResult, error) {
-	entries, err := os.ReadDir(path)
+	info, err := SaveGeneratedPackInfo(path)
 	if err != nil {
-		return PackResult{}, err
+		return PackResult{}, fmt.Errorf("read or generate info.pack: %w", err)
 	}
 
 	pack := PackResult{
-		Name: name,
-		Path: path,
+		Name:          info.Name,
+		Path:          path,
+		Description:   info.Description,
+		DescriptionRu: info.DescriptionRu,
+		Version:       info.Version,
+		Author:        info.Author,
+		Icon:          info.Icon,
+		NameRu:        info.NameRu,
+		Categories:    info.Categories,
 	}
 
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
+	for _, cat := range info.Categories {
+		filePath := filepath.Join(path, cat.File)
+		if _, err := os.Stat(filePath); err != nil {
+			return PackResult{}, fmt.Errorf("category %q file not found: %s", cat.Name, cat.File)
 		}
-
-		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if ext != ".csv" && ext != ".txt" {
-			continue
-		}
-
-		filePath := filepath.Join(path, entry.Name())
-		fr, err := s.scanFile(filePath, entry.Name())
+		fr, err := s.scanFile(filePath, cat.File, cat.Name)
 		if err != nil {
-			return PackResult{}, fmt.Errorf("scan file %s: %w", entry.Name(), err)
+			return PackResult{}, fmt.Errorf("scan %s: %w", cat.File, err)
 		}
 		pack.Files = append(pack.Files, fr)
 	}
@@ -90,20 +98,20 @@ func (s *Scanner) scanPack(name, path string) (PackResult, error) {
 	return pack, nil
 }
 
-func (s *Scanner) scanFile(filePath, fileName string) (FileResult, error) {
+func (s *Scanner) scanFile(filePath, fileName, catName string) (FileResult, error) {
 	ext := strings.ToLower(filepath.Ext(fileName))
 	switch ext {
 	case ".csv":
-		return s.scanCSVFile(filePath, fileName)
+		return s.scanCSVFile(filePath, fileName, catName)
 	case ".txt":
-		return s.scanTXTFile(filePath, fileName)
+		return s.scanTXTFile(filePath, fileName, catName)
 	default:
 		return FileResult{}, fmt.Errorf("unsupported file type: %s", fileName)
 	}
 }
 
-func (s *Scanner) scanCSVFile(filePath, fileName string) (FileResult, error) {
-	catID, catName, _, err := parseFilename(fileName)
+func (s *Scanner) scanCSVFile(filePath, fileName, catName string) (FileResult, error) {
+	catID, _, _, err := parseFilename(fileName)
 	if err != nil {
 		return FileResult{}, err
 	}
@@ -124,7 +132,6 @@ func (s *Scanner) scanCSVFile(filePath, fileName string) (FileResult, error) {
 		return FileResult{}, fmt.Errorf("parse csv: %w", err)
 	}
 
-	// Override subcategory with category name (no subcategories)
 	for i := range tags {
 		tags[i].SubcategoryName = catName
 	}
@@ -139,11 +146,7 @@ func (s *Scanner) scanCSVFile(filePath, fileName string) (FileResult, error) {
 	}, nil
 }
 
-func (s *Scanner) scanTXTFile(filePath, fileName string) (FileResult, error) {
-	base := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-	catName := strings.ReplaceAll(base, "_", " ")
-	subName := catName
-
+func (s *Scanner) scanTXTFile(filePath, fileName, catName string) (FileResult, error) {
 	hash, err := FileHash(filePath)
 	if err != nil {
 		return FileResult{}, err
@@ -155,7 +158,7 @@ func (s *Scanner) scanTXTFile(filePath, fileName string) (FileResult, error) {
 	}
 	defer f.Close()
 
-	tags, err := ParseTXT(f, catName, subName)
+	tags, err := ParseTXT(f, catName, catName)
 	if err != nil {
 		return FileResult{}, fmt.Errorf("parse txt: %w", err)
 	}
@@ -164,7 +167,7 @@ func (s *Scanner) scanTXTFile(filePath, fileName string) (FileResult, error) {
 		FileName:        fileName,
 		CategoryID:      0,
 		CategoryName:    catName,
-		SubcategoryName: subName,
+		SubcategoryName: catName,
 		Hash:            hash,
 		Tags:            tags,
 	}, nil

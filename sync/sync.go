@@ -2,6 +2,7 @@ package sync
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"danbooru-prompt-builder/database"
@@ -51,6 +52,15 @@ func (s *Service) Sync(tagsPath string) error {
 
 		if err := s.syncFiles(dbPack, pack.Files); err != nil {
 			return fmt.Errorf("sync files for %s: %w", pack.Name, err)
+		}
+
+		categoriesJSON, _ := json.Marshal(pack.Categories)
+		if err := s.repo.UpdatePackMeta(dbPack.ID,
+			pack.Description, pack.DescriptionRu,
+			pack.Version, pack.Author, pack.Icon, pack.NameRu,
+			categoriesJSON,
+		); err != nil {
+			return fmt.Errorf("update pack meta %s: %w", pack.Name, err)
 		}
 	}
 

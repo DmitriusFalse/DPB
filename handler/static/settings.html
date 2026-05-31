@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="settingsApp()" :class="{ 'dark': isDark }">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title x-text="t('settings.title')">Настройки — Danbooru Prompt Builder</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="manifest" href="/static/manifest.json">
+</head>
+<body class="bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-100 min-h-screen">
+  <header class="flex items-center gap-3 px-4 py-2 border-b border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-700">
+    <h1 class="text-lg font-bold" x-text="t('settings.title')">Настройки</h1>
+    <div class="flex-1"></div>
+    <div class="flex gap-1 items-center">
+      <span @click="theme='auto';localStorage.setItem('theme','auto')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='auto' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.auto')">◐</span>
+      <span @click="theme='dark';localStorage.setItem('theme','dark')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='dark' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.dark')">☾</span>
+      <span @click="theme='light';localStorage.setItem('theme','light')" class="px-1 py-1 text-lg cursor-pointer transition-all select-none opacity-50 hover:opacity-100 hover:text-glow" :class="theme==='light' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" :title="t('theme.light')">☀</span>
+      <span @click="lang='ru';localStorage.setItem('lang','ru');loadTranslations()" class="inline-flex items-center text-xs cursor-pointer transition-all select-none opacity-40 hover:opacity-100" :class="lang==='ru' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" title="русский">
+        <svg width="14" height="10" viewBox="0 0 14 10"><rect width="14" height="3.33" fill="#fff"/><rect y="3.33" width="14" height="3.33" fill="#0039A6"/><rect y="6.66" width="14" height="3.34" fill="#D52B1E"/></svg>ru
+      </span>
+      <span @click="lang='en';localStorage.setItem('lang','en');loadTranslations()" class="inline-flex items-center text-xs cursor-pointer transition-all select-none opacity-40 hover:opacity-100" :class="lang==='en' ? 'text-blue-600 dark:text-blue-400 opacity-100 font-medium' : 'text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400'" title="english">
+        <svg width="14" height="10" viewBox="0 0 14 10"><rect width="14" height="10" fill="#B22234"/><rect y="1.25" width="14" height="1.25" fill="#fff"/><rect y="3.75" width="14" height="1.25" fill="#fff"/><rect y="6.25" width="14" height="1.25" fill="#fff"/><rect y="8.75" width="14" height="1.25" fill="#fff"/><rect width="5.5" height="5.5" fill="#3C3B6E"/></svg>en
+      </span>
+    </div>
+    <a href="/" class="text-sm text-blue-600 dark:text-blue-400 hover:underline" x-text="t('settings.back')">На главную</a>
+  </header>
+
+  <main class="p-4 max-w-4xl mx-auto space-y-6">
+
+    <!-- App Settings -->
+    <section>
+      <h2 class="text-lg font-semibold mb-3" x-text="t('settings.app_settings')">Настройки приложения</h2>
+      <div class="border border-gray-200 dark:border-dark-600 rounded-lg overflow-hidden">
+        <table class="w-full border-collapse text-sm">
+          <tbody>
+            <tr class="border-b border-gray-100 dark:border-dark-700">
+              <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('settings.port')">Порт</td>
+              <td class="px-4 py-2.5">
+                <input type="number" x-model="cfg.port" class="w-24 border rounded px-2 py-1 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 dark:border-dark-700">
+              <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('settings.tags_path')">Путь к тегам</td>
+              <td class="px-4 py-2.5">
+                <input type="text" x-model="cfg.tags_path" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 dark:border-dark-700">
+              <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('settings.db_path')">Путь к БД</td>
+              <td class="px-4 py-2.5">
+                <input type="text" x-model="cfg.db_path" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 dark:border-dark-700">
+              <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('settings.log_level')">Уровень лога</td>
+              <td class="px-4 py-2.5">
+                <select x-model="cfg.log_level" class="border rounded px-2 py-1 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+                  <option value="error">error</option>
+                  <option value="debug">debug</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('settings.logs_dir')">Папка логов</td>
+              <td class="px-4 py-2.5">
+                <input type="text" x-model="cfg.logs_dir" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="flex items-center gap-3 mt-3">
+        <button @click="saveConfig()" class="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700" x-text="t('settings.save')">Сохранить</button>
+        <span x-show="saveMsg" x-text="saveMsg" class="text-sm" :class="saveOk ? 'text-green-600' : 'text-red-600'"></span>
+      </div>
+    </section>
+
+    <!-- Pack Management -->
+    <section>
+      <h2 class="text-lg font-semibold mb-3" x-text="t('settings.packs')">Управление наборами</h2>
+      <div class="border border-gray-200 dark:border-dark-600 rounded-lg overflow-hidden">
+        <template x-for="p in packs" :key="p.id">
+          <div class="flex items-start gap-3 p-3 border-b border-gray-100 dark:border-dark-700">
+            <div class="shrink-0 w-8 h-8 flex items-center justify-center rounded bg-gray-100 dark:bg-dark-600 text-base">
+              <span x-text="p.icon || '📦'"></span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-sm" x-text="lang === 'ru' && p.name_ru ? p.name_ru : p.name"></span>
+                <span x-show="p.version" class="text-[10px] text-gray-400 dark:text-dark-400 bg-gray-100 dark:bg-dark-600 px-1.5 py-0.5 rounded" x-text="'v' + p.version"></span>
+              </div>
+              <div x-show="p.description" class="text-xs text-gray-400 dark:text-dark-400 mt-0.5" x-text="lang === 'ru' && p.description_ru ? p.description_ru : p.description"></div>
+              <div class="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                <span x-show="p.author" x-text="t('packs.author') + ': ' + p.author"></span>
+                <span x-text="t('packs.categories') + ': ' + p.categories_list.length"></span>
+                <span class="font-mono" x-text="p.path"></span>
+              </div>
+            </div>
+            <div class="shrink-0 flex gap-1">
+              <button @click="rescan(p)" class="px-2.5 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" x-text="t('packs.rescan')">Пересканировать</button>
+              <button @click="deletePack(p)" class="px-2.5 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" x-text="t('packs.delete')">Удалить</button>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div x-show="packs.length === 0" class="text-center py-8 text-gray-400" x-text="t('packs.empty')">Нет паков</div>
+    </section>
+
+  </main>
+
+  <script>
+    function settingsApp() {
+      return {
+        theme: localStorage.getItem('theme') || 'auto',
+        lang: localStorage.getItem('lang') || (navigator.language || '').startsWith('ru') ? 'ru' : 'en',
+        translations: {},
+
+        t(key) {
+          return this.translations[key] || key;
+        },
+
+        async loadTranslations() {
+          try {
+            const res = await fetch(`/static/i18n/${this.lang}.json`);
+            this.translations = await res.json();
+          } catch (e) {
+            console.error(e);
+            this.translations = {};
+          }
+        },
+
+        get isDark() {
+          if (this.theme === 'dark') return true;
+          if (this.theme === 'light') return false;
+          return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        },
+
+        cfg: {},
+        packs: [],
+        saveMsg: '',
+        saveOk: false,
+
+        async init() {
+          this.loadTranslations();
+          await this.loadConfig();
+          await this.loadPacks();
+        },
+
+        async loadConfig() {
+          try {
+            const res = await fetch('/api/config');
+            this.cfg = await res.json();
+          } catch (e) {
+            console.error('loadConfig:', e);
+          }
+        },
+
+        async loadPacks() {
+          try {
+            const res = await fetch('/api/packs');
+            const list = await res.json();
+            for (const p of list) {
+              try {
+                p.categories_list = JSON.parse(p.categories || '[]');
+              } catch(e) {
+                p.categories_list = [];
+              }
+            }
+            this.packs = list;
+          } catch (e) {
+            console.error(e);
+          }
+        },
+
+        async rescan() {
+          await fetch('/api/sync', { method: 'POST' });
+          await this.loadPacks();
+        },
+
+        async deletePack(pack) {
+          const name = this.lang === 'ru' && pack.name_ru ? pack.name_ru : pack.name;
+          if (!confirm(this.t('packs.confirm_delete').replace('{name}', name))) return;
+          await fetch(`/api/packs?id=${pack.id}`, { method: 'DELETE' });
+          await this.loadPacks();
+        },
+
+        async saveConfig() {
+          this.saveMsg = '';
+          try {
+            const res = await fetch('/api/config', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.cfg)
+            });
+            if (res.ok) {
+              this.saveMsg = this.t('settings.saved');
+              this.saveOk = true;
+            } else {
+              const data = await res.json().catch(() => ({}));
+              this.saveMsg = data.error || 'Error';
+              this.saveOk = false;
+            }
+          } catch (e) {
+            this.saveMsg = e.message;
+            this.saveOk = false;
+          }
+          setTimeout(() => this.saveMsg = '', 5000);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

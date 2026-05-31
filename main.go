@@ -41,7 +41,8 @@ func main() {
 
 	syncSvc := syncsvc.NewService(db)
 	mux := http.NewServeMux()
-	handler.RegisterRoutes(mux, db, cfg, syncSvc)
+	configPath, _ := filepath.Abs("config.json")
+	handler.RegisterRoutes(mux, db, cfg, syncSvc, configPath)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.Port),
@@ -64,7 +65,6 @@ func main() {
 		systray.Quit()
 	}()
 
-	configPath, _ := filepath.Abs("config.json")
 	tray.Run(cfg.Port, tray.Actions{
 		PacksPath:  cfg.TagsPath,
 		ConfigPath: configPath,

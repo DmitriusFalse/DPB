@@ -42,7 +42,8 @@ func setupTest(t *testing.T) *testEnv {
 	syncSvc := sync.NewService(db)
 
 	mux := http.NewServeMux()
-	RegisterRoutes(mux, db, cfg, syncSvc)
+	configPath := filepath.Join(dir, "config.json")
+	RegisterRoutes(mux, db, cfg, syncSvc, configPath)
 
 	return &testEnv{
 		db:      db,
@@ -98,6 +99,60 @@ func TestGetPacks(t *testing.T) {
 	}
 	if packs[0].Name != "testpack" {
 		t.Errorf("Name = %q", packs[0].Name)
+	}
+}
+
+func TestGetPacks_NewFields(t *testing.T) {
+	env := setupTest(t)
+	defer env.close()
+
+	p, err := env.repo.CreatePack("metapack", "/path/to/metapack")
+	if err != nil {
+		t.Fatal(err)
+	}
+	env.repo.UpdatePackMeta(p.ID,
+		"Full description", "Полное описание",
+		"2.0", "developer", "🔧", "МетаПак",
+		[]byte(`[{"name":"test","file":"test.txt"}]`),
+	)
+
+	req := httptest.NewRequest("GET", "/api/packs", nil)
+	w := httptest.NewRecorder()
+	env.mux.ServeHTTP(w, req)
+
+	var packs []database.Pack
+	json.Unmarshal(w.Body.Bytes(), &packs)
+
+	var found *database.Pack
+	for i := range packs {
+		if packs[i].ID == p.ID {
+			found = &packs[i]
+			break
+		}
+	}
+	if found == nil {
+		t.Fatal("pack not found in response")
+	}
+	if found.Description != "Full description" {
+		t.Errorf("Description = %q", found.Description)
+	}
+	if found.DescriptionRu != "Полное описание" {
+		t.Errorf("DescriptionRu = %q", found.DescriptionRu)
+	}
+	if found.Version != "2.0" {
+		t.Errorf("Version = %q", found.Version)
+	}
+	if found.Author != "developer" {
+		t.Errorf("Author = %q", found.Author)
+	}
+	if found.Icon != "🔧" {
+		t.Errorf("Icon = %q", found.Icon)
+	}
+	if found.NameRu != "МетаПак" {
+		t.Errorf("NameRu = %q", found.NameRu)
+	}
+	if found.Categories != `[{"name":"test","file":"test.txt"}]` {
+		t.Errorf("Categories = %q", found.Categories)
 	}
 }
 
@@ -621,11 +676,11 @@ func TestPacksPage(t *testing.T) {
 	env := setupTest(t)
 	defer env.close()
 
-	req := httptest.NewRequest("GET", "/packs", nil)
+	req := httptest.NewRequest("GET", "/settings", nil)
 	w := httptest.NewRecorder()
 	env.mux.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
+ 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", w.Code)
 	}
 }

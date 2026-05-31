@@ -19,7 +19,7 @@ func NewRepo(db *sql.DB) *Repo {
 // ─── Packs ───
 
 func (r *Repo) GetPacks() ([]Pack, error) {
-	rows, err := r.db.Query(`SELECT id, name, path, created_at, updated_at FROM packs ORDER BY name`)
+	rows, err := r.db.Query(`SELECT id, name, path, description, description_ru, version, author, icon, name_ru, categories, created_at, updated_at FROM packs ORDER BY name`)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func (r *Repo) GetPacks() ([]Pack, error) {
 	var packs []Pack
 	for rows.Next() {
 		var p Pack
-		if err := rows.Scan(&p.ID, &p.Name, &p.Path, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Path, &p.Description, &p.DescriptionRu, &p.Version, &p.Author, &p.Icon, &p.NameRu, &p.Categories, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		packs = append(packs, p)
@@ -38,8 +38,8 @@ func (r *Repo) GetPacks() ([]Pack, error) {
 
 func (r *Repo) GetPackByName(name string) (*Pack, error) {
 	p := &Pack{}
-	err := r.db.QueryRow(`SELECT id, name, path, created_at, updated_at FROM packs WHERE name = ?`, name).
-		Scan(&p.ID, &p.Name, &p.Path, &p.CreatedAt, &p.UpdatedAt)
+	err := r.db.QueryRow(`SELECT id, name, path, description, description_ru, version, author, icon, name_ru, categories, created_at, updated_at FROM packs WHERE name = ?`, name).
+		Scan(&p.ID, &p.Name, &p.Path, &p.Description, &p.DescriptionRu, &p.Version, &p.Author, &p.Icon, &p.NameRu, &p.Categories, &p.CreatedAt, &p.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -58,6 +58,15 @@ func (r *Repo) CreatePack(name, path string) (*Pack, error) {
 	}
 	id, _ := res.LastInsertId()
 	return &Pack{ID: int(id), Name: name, Path: path, CreatedAt: now, UpdatedAt: now}, nil
+}
+
+func (r *Repo) UpdatePackMeta(id int, desc, descRu, version, author, icon, nameRu string, categories []byte) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+	_, err := r.db.Exec(`
+		UPDATE packs SET description=?, description_ru=?, version=?, author=?, icon=?, name_ru=?, categories=?, updated_at=?
+		WHERE id=?
+	`, desc, descRu, version, author, icon, nameRu, string(categories), now, id)
+	return err
 }
 
 func (r *Repo) DeletePack(id int) error {

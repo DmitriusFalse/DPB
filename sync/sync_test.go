@@ -134,6 +134,102 @@ func TestSync_MultiplePacks(t *testing.T) {
 	db.Close()
 }
 
+func TestSync_PackMetaSaved(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "test.db")
+	packDir := filepath.Join(dir, "tags", "mypack")
+	os.MkdirAll(packDir, 0755)
+
+	info := `{
+		"name": "MyPack",
+		"name_ru": "МойПак",
+		"description": "A test",
+		"description_ru": "Тест",
+		"version": "1.0",
+		"author": "me",
+		"icon": "📦",
+		"categories": [{"name": "test", "file": "0_general_test.csv"}]
+	}`
+	os.WriteFile(filepath.Join(packDir, "info.pack"), []byte(info), 0644)
+	os.WriteFile(filepath.Join(packDir, "0_general_test.csv"), []byte("t1,general,test,\n"), 0644)
+
+	db, err := database.Init(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	svc := NewService(db)
+	if err := svc.Sync(filepath.Join(dir, "tags")); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := database.NewRepo(db)
+	packs, _ := repo.GetPacks()
+	if len(packs) != 1 {
+		t.Fatalf("got %d packs, want 1", len(packs))
+	}
+
+	p := packs[0]
+	if p.Name != "MyPack" {
+		t.Errorf("Name = %q", p.Name)
+	}
+	if p.NameRu != "МойПак" {
+		t.Errorf("NameRu = %q", p.NameRu)
+	}
+	if p.Description != "A test" {
+		t.Errorf("Description = %q", p.Description)
+	}
+	if p.DescriptionRu != "Тест" {
+		t.Errorf("DescriptionRu = %q", p.DescriptionRu)
+	}
+	if p.Version != "1.0" {
+		t.Errorf("Version = %q", p.Version)
+	}
+	if p.Author != "me" {
+		t.Errorf("Author = %q", p.Author)
+	}
+	if p.Icon != "📦" {
+		t.Errorf("Icon = %q", p.Icon)
+	}
+	if p.Categories == "" {
+		t.Error("Categories should not be empty")
+	}
+}
+
+func TestSync_PackMetaUpdatedOnRescan(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "test.db")
+	packDir := filepath.Join(dir, "tags", "testpack")
+	os.MkdirAll(packDir, 0755)
+
+	info1 := `{"name": "testpack", "name_ru": "v1", "description": "first", "categories": [{"name": "test", "file": "0_general_test.csv"}]}`
+	os.WriteFile(filepath.Join(packDir, "info.pack"), []byte(info1), 0644)
+	os.WriteFile(filepath.Join(packDir, "0_general_test.csv"), []byte("t1,general,test,\n"), 0644)
+
+	db, _ := database.Init(dbPath)
+	svc := NewService(db)
+	svc.Sync(filepath.Join(dir, "tags"))
+
+	info2 := `{"name": "testpack", "name_ru": "v2", "description": "updated", "categories": [{"name": "test", "file": "0_general_test.csv"}]}`
+	os.WriteFile(filepath.Join(packDir, "info.pack"), []byte(info2), 0644)
+
+	svc.Sync(filepath.Join(dir, "tags"))
+
+	repo := database.NewRepo(db)
+	pack, _ := repo.GetPackByName("testpack")
+	if pack == nil {
+		t.Fatal("pack not found")
+	}
+	if pack.NameRu != "v2" {
+		t.Errorf("NameRu = %q, want v2", pack.NameRu)
+	}
+	if pack.Description != "updated" {
+		t.Errorf("Description = %q", pack.Description)
+	}
+	db.Close()
+}
+
 func TestSync_EmptyTagsDir(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "test.db")

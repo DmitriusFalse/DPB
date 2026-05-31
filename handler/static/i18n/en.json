@@ -11,6 +11,16 @@
 
   "header.packs": "Manage Packs",
 
+  "settings.title": "Settings",
+  "settings.app_settings": "App Settings",
+  "settings.port": "Port",
+  "settings.tags_path": "Tags Path",
+  "settings.db_path": "DB Path",
+  "settings.log_level": "Log Level",
+  "settings.logs_dir": "Logs Dir",
+  "settings.packs": "Pack Management",
+  "settings.back": "Back",
+
   "lang.switch": "Русский",
 
   "const.quality": "Quality Tags",
@@ -78,5 +88,9 @@
   "packs.rescan": "Rescan",
   "packs.delete": "Delete",
   "packs.empty": "No packs",
-  "packs.confirm_delete": "Delete pack \"{name}\" from DB?"
+  "packs.confirm_delete": "Delete pack \"{name}\" from DB?",
+  "packs.author": "Author",
+  "packs.categories": "Categories",
+  "settings.save": "Save",
+  "settings.saved": "Settings saved (restart required for some changes)"
 }
