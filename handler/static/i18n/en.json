@@ -93,5 +93,7 @@
   "packs.categories": "Categories",
   "settings.save": "Save",
   "settings.saved": "Settings saved (restart required for some changes)",
-  "donate.title": "This simple app was made just for fun. Want to support the author? Toss a coin on Boosty"
+  "donate.title": "This simple app was made just for fun. Want to support the author? Toss a coin on Boosty",
+  "donate.short1": "Toss a coin",
+  "donate.short2": "on Boosty"
 }

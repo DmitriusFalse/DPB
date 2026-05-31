@@ -457,3 +457,18 @@ button { font-family: inherit; cursor: pointer; color: inherit; background: none
   background: var(--c-green-900);
   color: var(--c-green-200);
 }
+
+/* Donate link */
+.donate-link {
+  color: var(--c-text-400);
+  text-decoration: none;
+}
+.donate-link:hover {
+  color: var(--c-red-500);
+}
+.dark .donate-link:hover {
+  color: var(--c-red-400);
+}
+.donate-link:hover .donate-heart {
+  filter: drop-shadow(0 0 6px rgba(255, 200, 0, 0.6));
+}
