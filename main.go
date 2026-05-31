@@ -42,6 +42,9 @@ func main() {
 	defer db.Close()
 
 	syncSvc := syncsvc.NewService(db)
+	if err := syncSvc.Sync(cfg.TagsPath); err != nil {
+		logger.Error("Initial sync: %v", err)
+	}
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux, db, cfg, syncSvc, cfgPath)
 
