@@ -77,7 +77,7 @@
           <template x-for="item in searchResults" :key="item.id">
             <span class="tag-pill text-xs" :class="selectedClass(item.tag_name)" @click="addTag(item)">
               <span x-text="item.tag_name" :title="item.aliases" class="max-w-40 truncate"></span>
-              <span class="text-[10px] opacity-60 shrink-0" x-text="item.category_name + '/' + item.subcategory_name"></span>
+              <span class="text-[10px] opacity-60 shrink-0" x-text="tCat(item.category_name)"></span>
               <button @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :title="t('tag.fav.add')" class="btn btn-fav"></button>
               <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
               <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
