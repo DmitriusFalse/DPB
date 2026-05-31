@@ -1,5 +1,7 @@
 function app() {
   return {
+    pwaInstallable: pwaInstallable,
+
     // Theme: 'auto', 'dark', 'light'
     theme: localStorage.getItem('theme') || 'auto',
 
@@ -593,6 +595,12 @@ function app() {
       if (this.theme === 'dark') return true;
       if (this.theme === 'light') return false;
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    },
+
+    init() {
+      document.addEventListener('pwa-installable', () => {
+        this.pwaInstallable = true;
+      });
     },
 
     loadAll() {

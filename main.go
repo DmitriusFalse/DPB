@@ -21,7 +21,9 @@ import (
 )
 
 func main() {
-	cfg, err := config.Load("config.json")
+	exe, _ := os.Executable()
+	cfgPath := filepath.Join(filepath.Dir(exe), "config.json")
+	cfg, err := config.Load(cfgPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
@@ -41,8 +43,7 @@ func main() {
 
 	syncSvc := syncsvc.NewService(db)
 	mux := http.NewServeMux()
-	configPath, _ := filepath.Abs("config.json")
-	handler.RegisterRoutes(mux, db, cfg, syncSvc, configPath)
+	handler.RegisterRoutes(mux, db, cfg, syncSvc, cfgPath)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.Port),
@@ -59,6 +60,8 @@ func main() {
 		}
 	}()
 
+	tray.OpenBrowser(fmt.Sprintf("http://127.0.0.1:%d", cfg.Port))
+
 	go func() {
 		<-ctx.Done()
 		logger.Debug("Signal received, shutting down...")
@@ -66,8 +69,7 @@ func main() {
 	}()
 
 	tray.Run(cfg.Port, tray.Actions{
-		PacksPath:  cfg.TagsPath,
-		ConfigPath: configPath,
+		PacksPath: cfg.TagsPath,
 	})
 
 	logger.Debug("Shutting down server...")

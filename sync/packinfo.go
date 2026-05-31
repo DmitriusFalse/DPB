@@ -3,6 +3,7 @@ package sync
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,14 +26,9 @@ type PackInfo struct {
 	Categories  []CategoryInfo `json:"categories"`
 }
 
-func ReadPackInfo(packPath string) (*PackInfo, error) {
-	path := filepath.Join(packPath, "info.pack")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read info.pack: %w", err)
-	}
+func ReadPackInfoFromReader(r io.Reader) (*PackInfo, error) {
 	var info PackInfo
-	if err := json.Unmarshal(data, &info); err != nil {
+	if err := json.NewDecoder(r).Decode(&info); err != nil {
 		return nil, fmt.Errorf("parse info.pack: %w", err)
 	}
 	if info.Name == "" {
@@ -50,6 +46,15 @@ func ReadPackInfo(packPath string) (*PackInfo, error) {
 		}
 	}
 	return &info, nil
+}
+
+func ReadPackInfo(packPath string) (*PackInfo, error) {
+	f, err := os.Open(filepath.Join(packPath, "info.pack"))
+	if err != nil {
+		return nil, fmt.Errorf("read info.pack: %w", err)
+	}
+	defer f.Close()
+	return ReadPackInfoFromReader(f)
 }
 
 func categoryNameFromFile(name string) string {

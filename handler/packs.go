@@ -3,11 +3,70 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"danbooru-prompt-builder/config"
 	"danbooru-prompt-builder/database"
+	"danbooru-prompt-builder/sync"
 )
+
+func handleGetPackByID(repo *database.Repo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.URL.Query().Get("id")
+		id, _ := strconv.Atoi(idStr)
+		if id <= 0 {
+			jsonError(w, "id required", http.StatusBadRequest)
+			return
+		}
+		pack, err := repo.GetPackByID(id)
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if pack == nil {
+			jsonError(w, "pack not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(pack)
+	}
+}
+
+func handleReadPackInfoFromReader(repo *database.Repo, cfg *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.URL.Query().Get("id")
+		id, _ := strconv.Atoi(idStr)
+		if id <= 0 {
+			jsonError(w, "id required", http.StatusBadRequest)
+			return
+		}
+		pack, err := repo.GetPackByID(id)
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if pack == nil {
+			jsonError(w, "pack not found", http.StatusNotFound)
+			return
+		}
+		infoPath := filepath.Join(pack.Path, "info.pack")
+		f, err := os.Open(infoPath)
+		if err != nil {
+			jsonError(w, "info.pack not found", http.StatusNotFound)
+			return
+		}
+		defer f.Close()
+		info, err := sync.ReadPackInfoFromReader(f)
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(info)
+	}
+}
 
 func handlePacks(repo *database.Repo, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

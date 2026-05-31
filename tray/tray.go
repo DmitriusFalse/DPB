@@ -13,10 +13,9 @@ import (
 var iconData []byte
 
 type Actions struct {
-	OnOpen     func()
-	OnQuit     func()
-	PacksPath  string
-	ConfigPath string
+	OnOpen    func()
+	OnQuit    func()
+	PacksPath string
 }
 
 func Run(port int, actions Actions) {
@@ -29,7 +28,7 @@ func Run(port int, actions Actions) {
 			mOpen := systray.AddMenuItem("Открыть", fmt.Sprintf("http://127.0.0.1:%d", port))
 			systray.AddSeparator()
 			mPacks := systray.AddMenuItem("Папка наборов", "")
-		mConfig := systray.AddMenuItem("Настройки", "")
+			mConfig := systray.AddMenuItem("Настройки", "")
 			systray.AddSeparator()
 			mQuit := systray.AddMenuItem("Выход", "Закрыть приложение")
 
@@ -40,12 +39,12 @@ func Run(port int, actions Actions) {
 						if actions.OnOpen != nil {
 							actions.OnOpen()
 						} else {
-							openBrowser(fmt.Sprintf("http://127.0.0.1:%d", port))
+							OpenBrowser(fmt.Sprintf("http://127.0.0.1:%d", port))
 						}
 					case <-mPacks.ClickedCh:
 						openFolder(actions.PacksPath)
-					case <-mConfig.ClickedCh:
-						openInNotepad(actions.ConfigPath)
+				case <-mConfig.ClickedCh:
+					OpenBrowser(fmt.Sprintf("http://127.0.0.1:%d/settings", port))
 					case <-mQuit.ClickedCh:
 						if actions.OnQuit != nil {
 							actions.OnQuit()
@@ -60,7 +59,7 @@ func Run(port int, actions Actions) {
 	)
 }
 
-func openBrowser(url string) {
+func OpenBrowser(url string) {
 	var cmd *exec.Cmd
 	cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
 	if err := cmd.Start(); err != nil {
@@ -75,9 +74,4 @@ func openFolder(path string) {
 	}
 }
 
-func openInNotepad(path string) {
-	cmd := exec.Command("notepad.exe", path)
-	if err := cmd.Start(); err != nil {
-		logger.Error("Failed to open notepad: %v", err)
-	}
-}
+

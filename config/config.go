@@ -15,6 +15,16 @@ type Config struct {
 	LogsDir  string `json:"logs_dir"`
 }
 
+func defaultConfig() *Config {
+	return &Config{
+		Port:     8080,
+		TagsPath: "./tags",
+		DBPath:   "./data.db",
+		LogsDir:  "./logs",
+		LogLevel: "error",
+	}
+}
+
 func Load(path string) (*Config, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
@@ -23,6 +33,17 @@ func Load(path string) (*Config, error) {
 
 	data, err := os.ReadFile(absPath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			cfg := defaultConfig()
+			cfgDir := filepath.Dir(absPath)
+			cfg.TagsPath = resolvePath(cfgDir, cfg.TagsPath)
+			cfg.DBPath = resolvePath(cfgDir, cfg.DBPath)
+			cfg.LogsDir = resolvePath(cfgDir, cfg.LogsDir)
+			if err := cfg.Save(absPath); err != nil {
+				return nil, fmt.Errorf("create default config: %w", err)
+			}
+			return cfg, nil
+		}
 		return nil, fmt.Errorf("read config: %w", err)
 	}
 

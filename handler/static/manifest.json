@@ -1,8 +1,16 @@
 {
   "name": "Danbooru Prompt Builder",
   "short_name": "Prompt Builder",
+  "description": "Desktop app for building AI prompts from Danbooru tags",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme_color": "#1e293b"
+  "theme_color": "#1e293b",
+  "icons": [
+    {
+      "src": "/static/icon.ico",
+      "sizes": "256x256",
+      "type": "image/x-icon"
+    }
+  ]
 }

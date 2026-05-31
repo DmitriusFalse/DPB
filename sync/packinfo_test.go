@@ -350,3 +350,110 @@ func TestSaveGeneratedPackInfo_NoFiles(t *testing.T) {
 		t.Fatal("expected error for directory with no tag files")
 	}
 }
+
+func TestReadPackInfoFromReader_Valid(t *testing.T) {
+	r := strings.NewReader(`{"name":"Test","categories":[{"name":"cat1","file":"cat1.txt"}]}`)
+	p, err := ReadPackInfoFromReader(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Name != "Test" {
+		t.Errorf("Name = %q", p.Name)
+	}
+	if len(p.Categories) != 1 {
+		t.Fatalf("got %d categories", len(p.Categories))
+	}
+	if p.Categories[0].Name != "cat1" {
+		t.Errorf("Category[0].Name = %q", p.Categories[0].Name)
+	}
+}
+
+func TestReadPackInfoFromReader_AllFields(t *testing.T) {
+	r := strings.NewReader(`{
+		"name": "FullPack",
+		"name_ru": "ПолныйПак",
+		"description": "English desc",
+		"description_ru": "Русское описание",
+		"version": "3.0",
+		"author": "dev",
+		"icon": "⭐",
+		"categories": [{"name":"cat1","file":"f1.txt"},{"name":"cat2","name_ru":"кат2","file":"f2.txt"}]
+	}`)
+	p, err := ReadPackInfoFromReader(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Name != "FullPack" {
+		t.Errorf("Name = %q", p.Name)
+	}
+	if p.NameRu != "ПолныйПак" {
+		t.Errorf("NameRu = %q", p.NameRu)
+	}
+	if p.Description != "English desc" {
+		t.Errorf("Description = %q", p.Description)
+	}
+	if p.DescriptionRu != "Русское описание" {
+		t.Errorf("DescriptionRu = %q", p.DescriptionRu)
+	}
+	if p.Version != "3.0" {
+		t.Errorf("Version = %q", p.Version)
+	}
+	if p.Author != "dev" {
+		t.Errorf("Author = %q", p.Author)
+	}
+	if p.Icon != "⭐" {
+		t.Errorf("Icon = %q", p.Icon)
+	}
+	if len(p.Categories) != 2 {
+		t.Fatalf("got %d categories", len(p.Categories))
+	}
+	if p.Categories[1].NameRu != "кат2" {
+		t.Errorf("Category[1].NameRu = %q", p.Categories[1].NameRu)
+	}
+}
+
+func TestReadPackInfoFromReader_InvalidJSON(t *testing.T) {
+	_, err := ReadPackInfoFromReader(strings.NewReader("{invalid"))
+	if err == nil {
+		t.Fatal("expected error for invalid JSON")
+	}
+}
+
+func TestReadPackInfoFromReader_MissingName(t *testing.T) {
+	_, err := ReadPackInfoFromReader(strings.NewReader(`{"categories":[{"name":"c","file":"f"}]}`))
+	if err == nil {
+		t.Fatal("expected error for missing name")
+	}
+}
+
+func TestReadPackInfoFromReader_EmptyCategories(t *testing.T) {
+	_, err := ReadPackInfoFromReader(strings.NewReader(`{"name":"X","categories":[]}`))
+	if err == nil {
+		t.Fatal("expected error for empty categories")
+	}
+}
+
+func TestReadPackInfoFromReader_CategoryNoName(t *testing.T) {
+	_, err := ReadPackInfoFromReader(strings.NewReader(`{"name":"X","categories":[{"file":"f"}]}`))
+	if err == nil {
+		t.Fatal("expected error for category without name")
+	}
+}
+
+func TestReadPackInfoFromReader_CategoryNoFile(t *testing.T) {
+	_, err := ReadPackInfoFromReader(strings.NewReader(`{"name":"X","categories":[{"name":"c"}]}`))
+	if err == nil {
+		t.Fatal("expected error for category without file")
+	}
+}
+
+func TestReadPackInfoFromReader_CategoryWithNameRu(t *testing.T) {
+	r := strings.NewReader(`{"name":"X","categories":[{"name":"c","name_ru":"рус","file":"f.txt"}]}`)
+	p, err := ReadPackInfoFromReader(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Categories[0].NameRu != "рус" {
+		t.Errorf("NameRu = %q", p.Categories[0].NameRu)
+	}
+}

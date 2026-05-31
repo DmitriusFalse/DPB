@@ -36,6 +36,24 @@ func (r *Repo) GetPacks() ([]Pack, error) {
 	return packs, rows.Err()
 }
 
+func (r *Repo) GetPackByID(id int) (*Pack, error) {
+	p := &Pack{}
+	err := r.db.QueryRow(`SELECT id, name, path, description, description_ru, version, author, icon, name_ru, categories, created_at, updated_at FROM packs WHERE id = ?`, id).
+		Scan(&p.ID, &p.Name, &p.Path, &p.Description, &p.DescriptionRu, &p.Version, &p.Author, &p.Icon, &p.NameRu, &p.Categories, &p.CreatedAt, &p.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func (r *Repo) UpdateLastPackID(id int) error {
+	_, err := r.db.Exec(`UPDATE packs SET updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id)
+	return err
+}
+
 func (r *Repo) GetPackByName(name string) (*Pack, error) {
 	p := &Pack{}
 	err := r.db.QueryRow(`SELECT id, name, path, description, description_ru, version, author, icon, name_ru, categories, created_at, updated_at FROM packs WHERE name = ?`, name).

@@ -38,6 +38,8 @@ func detectContentType(path string) string {
 		return "application/javascript; charset=utf-8"
 	case len(path) > 5 && path[len(path)-5:] == ".json":
 		return "application/json"
+	case len(path) > 4 && path[len(path)-4:] == ".ico":
+		return "image/x-icon"
 	default:
 		return "text/plain; charset=utf-8"
 	}

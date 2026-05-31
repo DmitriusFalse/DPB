@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"danbooru-prompt-builder/config"
@@ -669,6 +670,117 @@ func TestStatic(t *testing.T) {
 	ct := w.Header().Get("Content-Type")
 	if ct != "application/json" {
 		t.Errorf("Content-Type = %q", ct)
+	}
+}
+
+func TestGetPackByIDHandler(t *testing.T) {
+	env := setupTest(t)
+	defer env.close()
+	env.seed(t)
+
+	req := httptest.NewRequest("GET", "/api/pack?id=1", nil)
+	w := httptest.NewRecorder()
+	env.mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d: %s", w.Code, w.Body.String())
+	}
+
+	var pack database.Pack
+	json.Unmarshal(w.Body.Bytes(), &pack)
+	if pack.ID != 1 {
+		t.Errorf("ID = %d", pack.ID)
+	}
+	if pack.Name != "testpack" {
+		t.Errorf("Name = %q", pack.Name)
+	}
+}
+
+func TestGetPackByIDHandler_NotFound(t *testing.T) {
+	env := setupTest(t)
+	defer env.close()
+
+	req := httptest.NewRequest("GET", "/api/pack?id=999", nil)
+	w := httptest.NewRecorder()
+	env.mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
+	}
+}
+
+func TestGetPackByIDHandler_NoID(t *testing.T) {
+	env := setupTest(t)
+	defer env.close()
+
+	req := httptest.NewRequest("GET", "/api/pack", nil)
+	w := httptest.NewRecorder()
+	env.mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestReadPackInfoFromReaderHandler(t *testing.T) {
+	env := setupTest(t)
+	defer env.close()
+
+	p, err := env.repo.CreatePack("infopack", filepath.Join(env.cfg.TagsPath, "infopack"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	packDir := filepath.Join(env.cfg.TagsPath, "infopack")
+	os.MkdirAll(packDir, 0755)
+	info := `{"name":"infopack","categories":[{"name":"test","file":"test.txt"}]}`
+	os.WriteFile(filepath.Join(packDir, "info.pack"), []byte(info), 0644)
+
+	req := httptest.NewRequest("GET", "/api/pack/info?id="+strconv.Itoa(p.ID), nil)
+	w := httptest.NewRecorder()
+	env.mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d: %s", w.Code, w.Body.String())
+	}
+
+	var result struct {
+		Name string `json:"name"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &result)
+	if result.Name != "infopack" {
+		t.Errorf("Name = %q", result.Name)
+	}
+}
+
+func TestReadPackInfoFromReaderHandler_NotFound(t *testing.T) {
+	env := setupTest(t)
+	defer env.close()
+
+	req := httptest.NewRequest("GET", "/api/pack/info?id=999", nil)
+	w := httptest.NewRecorder()
+	env.mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
+	}
+}
+
+func TestReadPackInfoFromReaderHandler_NoInfoPack(t *testing.T) {
+	env := setupTest(t)
+	defer env.close()
+
+	p, err := env.repo.CreatePack("nopack", filepath.Join(env.cfg.TagsPath, "nopack"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.MkdirAll(filepath.Join(env.cfg.TagsPath, "nopack"), 0755)
+
+	req := httptest.NewRequest("GET", "/api/pack/info?id="+strconv.Itoa(p.ID), nil)
+	w := httptest.NewRecorder()
+	env.mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
 	}
 }
 
