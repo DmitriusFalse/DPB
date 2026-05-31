@@ -89,9 +89,11 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .flex-\[3\] { flex: 3; min-width: 0; }
 .shrink-0 { flex-shrink: 0; }
 .items-center { align-items: center; }
+.self-center { align-self: center; }
 .justify-center { justify-content: center; }
 .justify-between { justify-content: space-between; }
 .justify-end { justify-content: flex-end; }
+.gap-0\.5 { gap: 2px; }
 .gap-1 { gap: 4px; }
 .gap-1\.5 { gap: 6px; }
 .gap-2 { gap: 8px; }
@@ -105,11 +107,14 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .w-8 { width: 32px; }
 .w-5 { width: 20px; }
 .w-2\.5 { width: 10px; }
+.w-px { width: 1px; }
 .h-screen { height: 100vh; }
 .h-full { height: 100%; }
 .h-8 { height: 32px; }
 .h-5 { height: 20px; }
 .h-2\.5 { height: 10px; }
+.h-4 { height: 16px; }
+.h-3 { height: 12px; }
 .h-2 { height: 8px; }
 .min-w-0 { min-width: 0; }
 .min-w-\[30\%\] { min-width: 30%; }
@@ -135,7 +140,9 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .p-3 { padding: 12px; }
 .p-4 { padding: 16px; }
 .p-6 { padding: 24px; }
+.px-0\.5 { padding-left: 2px; padding-right: 2px; }
 .px-1 { padding-left: 4px; padding-right: 4px; }
+.px-1\.5 { padding-left: 6px; padding-right: 6px; }
 .px-2 { padding-left: 8px; padding-right: 8px; }
 .px-2\.5 { padding-left: 10px; padding-right: 10px; }
 .px-3 { padding-left: 12px; padding-right: 12px; }
@@ -160,7 +167,9 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .text-sm { font-size: 14px; }
 .text-lg { font-size: 18px; }
 .text-\[10px\] { font-size: 10px; }
+.text-\[22px\] { font-size: 22px; }
 .leading-tight { line-height: 1.25; }
+.leading-none { line-height: 1; }
 .font-normal { font-weight: 400; }
 .font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
@@ -254,6 +263,7 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 .dark .dark\:hover\:text-dark-900:hover { color: var(--c-bg); }
 .dark .dark\:hover\:text-red-300:hover { color: var(--c-red-300); }
 .opacity-60 { opacity: 0.6; }
+.opacity-40 { opacity: 0.4; }
 .opacity-50 { opacity: 0.5; }
 .hover\:opacity-100:hover { opacity: 1; }
 .hover\:opacity-80:hover { opacity: 0.8; }

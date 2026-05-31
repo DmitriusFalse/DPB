@@ -13,6 +13,8 @@ A Windows desktop application for building AI image generation prompts from Danb
 - **i18n** — Russian/English UI
 - **System tray** — menu: Open, Packs Folder, Settings, Exit
 
+![Screenshot](screenshots/general_en.png)
+
 ## Usage
 
 1. Place tag pack folders into `./tags/`. Each folder contains `.csv` or `.txt` files.
@@ -77,6 +79,8 @@ go test ./...
 - **Переключение темы** — светлая/тёмная/авто
 - **Локализация** — русский/английский интерфейс
 - **Системный трей** — меню: Открыть, Папка наборов, Настройки, Выход
+
+![Скриншот](screenshots/general_ru.png)
 
 ## Использование
 
