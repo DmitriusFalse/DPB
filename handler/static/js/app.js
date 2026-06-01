@@ -494,12 +494,14 @@ function app() {
       if (!this.selectedPackId) return;
       this._tagImgId++;
       const myId = this._tagImgId;
+      const el = event.currentTarget;
+      const rect = el.getBoundingClientRect();
       const img = new Image();
       img.onload = () => {
         if (myId !== this._tagImgId) return;
         if (img.naturalWidth <= 1) return;
         this.tagImage = img.src;
-        this.tagImagePos = { x: event.clientX + 15, y: event.clientY + 15 };
+        this.tagImagePos = { x: rect.left, y: rect.bottom + 4 };
       };
       img.onerror = () => {
         if (myId !== this._tagImgId) return;
