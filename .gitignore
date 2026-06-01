@@ -6,3 +6,4 @@ data.db-wal
 logs/
 build/
 *.exe
+tags/
