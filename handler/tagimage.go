@@ -49,8 +49,16 @@ func handleTagImage(repo *database.Repo, cfg *config.Config) http.HandlerFunc {
 			return
 		}
 
-		imgPath := filepath.Join(packPath, "img", tagName+".png")
-		f, err := os.Open(imgPath)
+		tagPath := filepath.Join(packPath, "img", tagName+".png")
+		if category, _ := repo.GetTagCategory(packID, tagName); category != "" {
+			catPath := filepath.Join(packPath, "img", category, tagName+".png")
+			if f2, err2 := os.Open(catPath); err2 == nil {
+				f2.Close()
+				tagPath = catPath
+			}
+		}
+
+		f, err := os.Open(tagPath)
 		if err != nil {
 			w.Header().Set("Content-Type", "image/gif")
 			w.Write(transparentGIF)

@@ -243,6 +243,15 @@ func (r *Repo) DeleteTag(fileID int, tagName string) error {
 
 // ─── Search / Tree ───
 
+func (r *Repo) GetTagCategory(packID int, tagName string) (string, error) {
+	var category string
+	err := r.db.QueryRow(`SELECT subcategory_name FROM tags WHERE pack_id = ? AND tag_name = ? LIMIT 1`, packID, tagName).Scan(&category)
+	if err != nil {
+		return "", err
+	}
+	return category, nil
+}
+
 func (r *Repo) SearchTags(packID int, query string, limit int) ([]Tag, error) {
 	if limit <= 0 {
 		limit = 50
