@@ -33,6 +33,7 @@ func RegisterRoutes(mux *http.ServeMux, db *sql.DB, cfg *config.Config, syncSvc 
 	mux.HandleFunc("/api/tags/tree", api(handleTree(repo)))
 	mux.HandleFunc("/api/favorites", api(handleFavorites(repo)))
 	mux.HandleFunc("/api/presets", api(handlePresets(repo)))
+	mux.HandleFunc("/api/static/image", api(handleStaticImage(cfg)))
 	mux.HandleFunc("/api/tags/image", api(handleTagImage(repo, cfg)))
 	mux.HandleFunc("/api/prompts", api(handlePrompts(repo)))
 }

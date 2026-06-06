@@ -70,6 +70,13 @@ if exist "tags" (
     )
 )
 
+:: Copy static images alongside the binary
+if exist "handler\img" (
+    if not exist "%BUILD_DIR%\img" (
+        xcopy /E /I /Q "handler\img" "%BUILD_DIR%\img" >nul
+    )
+)
+
 :: Clean up junk files left after tests
 if exist "%BUILD_DIR%\*.log" del "%BUILD_DIR%\*.log"
 

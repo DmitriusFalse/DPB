@@ -174,7 +174,7 @@
               <template x-if="cat.tags">
                 <div class="flex flex-wrap gap-1">
                   <template x-for="tag in cat.tags" :key="tag">
-                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @click="copyTagName(tag)">
+                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="copyTagName(tag)">
                       <span x-text="tag" class="max-w-40 truncate"></span>
                       <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
                       <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
@@ -191,7 +191,7 @@
                     </button>
                     <div x-show="constSubOpen[cat.name+'_'+sub.name]" class="flex flex-wrap gap-1 px-2 py-1">
                       <template x-for="tag in sub.tags" :key="tag">
-                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @click="copyTagName(tag)">
+                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="copyTagName(tag)">
                           <span x-text="tag" class="max-w-40 truncate"></span>
                           <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: sub.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
                           <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: sub.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
@@ -242,7 +242,7 @@
         </div>
         <div class="flex flex-wrap gap-1 min-h-[28px] mb-3">
           <template x-for="(ch, i) in positiveChips" :key="i">
-            <span class="chip chip-positive" @click="removeChip('positive', i)" @mouseenter="showTagImage($event, ch.name)" @mouseleave="hideTagImage()">
+            <span class="chip chip-positive" @click="removeChip('positive', i)" @mouseenter="showTagImage($event, ch.name, ch.category === 'const')" @mouseleave="hideTagImage()">
               <span x-text="ch.name" class="max-w-48 truncate"></span>
               <span class="text-xs opacity-60 hover:opacity-100">x</span>
             </span>
@@ -254,7 +254,7 @@
         </div>
         <div class="flex flex-wrap gap-1 min-h-[28px]">
           <template x-for="(ch, i) in negativeChips" :key="i">
-            <span class="chip chip-negative" @click="removeChip('negative', i)" @mouseenter="showTagImage($event, ch.name)" @mouseleave="hideTagImage()">
+            <span class="chip chip-negative" @click="removeChip('negative', i)" @mouseenter="showTagImage($event, ch.name, ch.category === 'const')" @mouseleave="hideTagImage()">
               <span x-text="ch.name" class="max-w-48 truncate"></span>
               <span class="text-xs opacity-60 hover:opacity-100">x</span>
             </span>
@@ -299,7 +299,7 @@
             <div class="flex flex-wrap gap-3 justify-center">
               <template x-for="ch in [...positiveChips, ...negativeChips].filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)" :key="ch.name">
                 <div class="flex flex-col items-center gap-1" x-data="{ err: false }" x-show="!err">
-                  <img :src="'/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
+                  <img :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
                   <span class="text-[10px] text-gray-500 truncate max-w-32 text-center" x-text="ch.name"></span>
                 </div>
               </template>

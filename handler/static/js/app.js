@@ -490,8 +490,8 @@ function app() {
     tagImagePos: {},
     _tagImgId: 0,
 
-    showTagImage(event, tagName) {
-      if (!this.selectedPackId) return;
+    showTagImage(event, tagName, isStatic = false) {
+      if (!isStatic && !this.selectedPackId) return;
       this._tagImgId++;
       const myId = this._tagImgId;
       const el = event.currentTarget;
@@ -507,7 +507,11 @@ function app() {
         if (myId !== this._tagImgId) return;
         this.tagImage = null;
       };
-      img.src = `/api/tags/image?pack_id=${this.selectedPackId}&tag=${encodeURIComponent(tagName)}`;
+      if (isStatic) {
+        img.src = `/api/static/image?tag=${encodeURIComponent(tagName)}`;
+      } else if (this.selectedPackId) {
+        img.src = `/api/tags/image?pack_id=${this.selectedPackId}&tag=${encodeURIComponent(tagName)}`;
+      }
     },
 
     hideTagImage() {

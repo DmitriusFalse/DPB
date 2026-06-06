@@ -8,20 +8,22 @@ import (
 )
 
 type Config struct {
-	Port     int    `json:"port"`
-	TagsPath string `json:"tags_path"`
-	DBPath   string `json:"db_path"`
-	LogLevel string `json:"log_level"`
-	LogsDir  string `json:"logs_dir"`
+	Port          int    `json:"port"`
+	TagsPath      string `json:"tags_path"`
+	DBPath        string `json:"db_path"`
+	LogLevel      string `json:"log_level"`
+	LogsDir       string `json:"logs_dir"`
+	StaticImgPath string `json:"static_img_path"`
 }
 
 func defaultConfig() *Config {
 	return &Config{
-		Port:     8080,
-		TagsPath: "./tags",
-		DBPath:   "./data.db",
-		LogsDir:  "./logs",
-		LogLevel: "error",
+		Port:          8080,
+		TagsPath:      "./tags",
+		DBPath:        "./data.db",
+		LogsDir:       "./logs",
+		LogLevel:      "error",
+		StaticImgPath: "./img",
 	}
 }
 
@@ -39,6 +41,7 @@ func Load(path string) (*Config, error) {
 			cfg.TagsPath = resolvePath(cfgDir, cfg.TagsPath)
 			cfg.DBPath = resolvePath(cfgDir, cfg.DBPath)
 			cfg.LogsDir = resolvePath(cfgDir, cfg.LogsDir)
+			cfg.StaticImgPath = resolvePath(cfgDir, cfg.StaticImgPath)
 			if err := cfg.Save(absPath); err != nil {
 				return nil, fmt.Errorf("create default config: %w", err)
 			}
@@ -69,10 +72,14 @@ func Load(path string) (*Config, error) {
 	if cfg.LogLevel == "" {
 		cfg.LogLevel = "error"
 	}
+	if cfg.StaticImgPath == "" {
+		cfg.StaticImgPath = "./img"
+	}
 
 	cfg.TagsPath = resolvePath(cfgDir, cfg.TagsPath)
 	cfg.DBPath = resolvePath(cfgDir, cfg.DBPath)
 	cfg.LogsDir = resolvePath(cfgDir, cfg.LogsDir)
+	cfg.StaticImgPath = resolvePath(cfgDir, cfg.StaticImgPath)
 
 	return cfg, nil
 }
