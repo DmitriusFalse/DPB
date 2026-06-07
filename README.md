@@ -2,6 +2,8 @@
 
 A Windows desktop application for building AI image generation prompts from Danbooru-style tag collections.
 
+**Note:** This application works with Danbooru tags and fetches previews. Some tags and content may be NSFW (Not Safe For Work). Explicit images are blurred by default.
+
 ## Features
 
 - **Tag browser** — search, category tree, favorites
@@ -72,6 +74,8 @@ If you find this app useful, consider tossing a coin on [Boosty](https://boosty.
 # Danbooru Prompt Builder
 
 Десктопное приложение для Windows — сборщик промптов для AI-генерации изображений на основе Danbooru-тегов.
+
+**Примечание:** Приложение работает с Danbooru-тегами и загружает превью. Некоторые теги и контент могут быть NSFW (Not Safe For Work). Откровенные изображения по умолчанию размыты.
 
 ## Возможности
 
