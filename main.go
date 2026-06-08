@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"danbooru-prompt-builder/config"
@@ -19,6 +22,9 @@ import (
 
 	"github.com/getlantern/systray"
 )
+
+//go:embed version.txt
+var buildVersion string
 
 func main() {
 	exe, _ := os.Executable()
@@ -47,6 +53,12 @@ func main() {
 	}
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux, db, cfg, syncSvc, cfgPath)
+
+	version := strings.TrimSpace(buildVersion)
+	mux.HandleFunc("/api/version", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"version": version})
+	})
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.Port),

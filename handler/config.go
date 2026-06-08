@@ -35,13 +35,15 @@ func handleConfig(cfg *config.Config, configPath string) http.HandlerFunc {
 			if updated.LogLevel == "" {
 				updated.LogLevel = "error"
 			}
+			if updated.StaticImgPath == "" {
+				updated.StaticImgPath = cfg.StaticImgPath
+			}
 
-			*cfg = updated
-
-			if err := cfg.Save(configPath); err != nil {
+			if err := updated.Save(configPath); err != nil {
 				jsonError(w, "Save failed: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
+			*cfg = updated
 
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]string{"status": "ok"})

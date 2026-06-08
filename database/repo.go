@@ -49,11 +49,6 @@ func (r *Repo) GetPackByID(id int) (*Pack, error) {
 	return p, nil
 }
 
-func (r *Repo) UpdateLastPackID(id int) error {
-	_, err := r.db.Exec(`UPDATE packs SET updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id)
-	return err
-}
-
 func (r *Repo) GetPackByName(name string) (*Pack, error) {
 	p := &Pack{}
 	err := r.db.QueryRow(`SELECT id, name, path, description, description_ru, version, author, icon, name_ru, categories, created_at, updated_at FROM packs WHERE name = ?`, name).
@@ -323,29 +318,6 @@ func (r *Repo) GetSubcategories(packID int, categoryName string) ([]string, erro
 		subs = append(subs, s)
 	}
 	return subs, rows.Err()
-}
-
-func (r *Repo) GetSubcategoriesWithCount(packID int, categoryName string) ([]SubcategoryInfo, error) {
-	rows, err := r.db.Query(`
-		SELECT subcategory_name, COUNT(*) FROM tags
-		WHERE pack_id = ? AND category_name = ?
-		GROUP BY subcategory_name
-		ORDER BY subcategory_name
-	`, packID, categoryName)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var infos []SubcategoryInfo
-	for rows.Next() {
-		var info SubcategoryInfo
-		if err := rows.Scan(&info.Name, &info.Count); err != nil {
-			return nil, err
-		}
-		infos = append(infos, info)
-	}
-	return infos, rows.Err()
 }
 
 func (r *Repo) GetCategoryCounts(packID int) (map[string]int, error) {

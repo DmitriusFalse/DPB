@@ -26,6 +26,7 @@
   "const.scene": "Scene & Settings",
   "const.style": "Style & Lighting",
   "const.negative": "Negative Tags",
+  "const.appearance": "Appearance & Framing",
 
   "presets.label": "Presets",
 
@@ -52,6 +53,7 @@
 
   "actions.save": "💾 Save",
   "actions.clear": "🗑 Clear",
+  "actions.clear_confirm": "Clear all chips?",
   "actions.history": "📂 History",
   "actions.cancel": "Cancel",
 
@@ -71,7 +73,7 @@
   "modal.save.confirm": "Save",
   "modal.loading.title": "Loading tags...",
 
-  "toast.copied": "Copied: ",
+  "toast.copied": "Copied",
 
   "packs.rescan": "Rescan",
   "packs.delete": "Delete",

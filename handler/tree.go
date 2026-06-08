@@ -35,17 +35,18 @@ func handleTree(repo *database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
+		packID, _ := strconv.Atoi(r.URL.Query().Get("pack_id"))
+		if packID <= 0 {
+			jsonError(w, "pack_id required", http.StatusBadRequest)
+			return
+		}
+
+		// Apply gzip after validation — avoid compressing error responses
 		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			gz := gzip.NewWriter(w)
 			w.Header().Set("Content-Encoding", "gzip")
 			w = gzipWriter{ResponseWriter: w, writer: gz}
 			defer gz.Close()
-		}
-
-		packID, _ := strconv.Atoi(r.URL.Query().Get("pack_id"))
-		if packID <= 0 {
-			jsonError(w, "pack_id required", http.StatusBadRequest)
-			return
 		}
 
 		catName := r.URL.Query().Get("category")

@@ -23,6 +23,7 @@ var tkeyToFolder = map[string]string{
 	"const.scene":    "scene",
 	"const.style":    "style",
 	"const.negative": "negative",
+	"const.appearance": "appearance",
 }
 
 func getStaticTagCategory() map[string]string {

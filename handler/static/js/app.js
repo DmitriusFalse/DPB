@@ -1,3 +1,5 @@
+const BLOCK_IDS = { 'quality': 1, 'sources': 2, 'rating': 3, 'appearance': 4, 'pose': 5, 'scene': 6, 'style': 7 };
+
 function app() {
   return {
     pwaInstallable: pwaInstallable,
@@ -37,13 +39,13 @@ function app() {
       this.tagBlockMap = {};
       try {
         const res = await fetch('/static/constants.json');
+        if (!res.ok) { console.error('loadConstants status:', res.status); return; }
         this.constantTags = await res.json();
-        const blockIds = { 'quality': 1, 'sources': 2, 'rating': 3, 'pose': 5, 'scene': 6, 'style': 7 };
         for (const group of this.constantTags) {
           const tkey = group.tkey || '';
           const parts = tkey.split('.');
           const cat = parts.length >= 2 ? parts[1] : '';
-          const blockId = blockIds[cat];
+          const blockId = BLOCK_IDS[cat];
           if (!blockId) continue;
           if (group.tags) {
             for (const tag of group.tags) this.tagBlockMap[tag] = blockId;
@@ -104,12 +106,14 @@ function app() {
 
     treeModal: false,
     treeModalProgress: 0,
+    _treeLoading: null,
 
     // Constant tags
     constOpen: {},
     constSubOpen: {},
     constantTags: [],
     tagBlockMap: {},
+    version: '',
 
     // Favorites
     favorites: [],
@@ -139,15 +143,19 @@ function app() {
 
     // ─── Init ───
 
-    init() {
-      this.loadTranslations();
+    async init() {
       this.loadPresets();
-      this.loadConstants();
+      await this.loadTranslations();
+      await this.loadConstants();
       this.updateChipNames();
-      this.loadPacks();
+      await this.loadPacks();
       document.addEventListener('pwa-installable', () => {
         this.pwaInstallable = true;
       });
+      try {
+        const r = await fetch('/api/version');
+        if (r.ok) { const d = await r.json(); this.version = d.version; }
+      } catch(e) {}
     },
 
     // ─── Packs ───
@@ -155,6 +163,7 @@ function app() {
     async loadPacks() {
       try {
         const res = await fetch('/api/packs');
+        if (!res.ok) { console.error('loadPacks status:', res.status); return; }
         const list = await res.json();
         for (const p of list) {
           try {
@@ -214,6 +223,7 @@ function app() {
       if (!this.selectedPackId) return;
       try {
         const res = await fetch(`/api/tags/tree?pack_id=${this.selectedPackId}`);
+        if (!res.ok) { console.error('loadTree status:', res.status); return; }
         this.tree = await res.json();
         this.treeOpen = {};
       } catch (e) {
@@ -222,11 +232,14 @@ function app() {
     },
 
     async toggleCategory(cat) {
+      if (!cat) return;
       const name = typeof cat === 'string' ? cat : cat.name;
       this.treeOpen[name] = !this.treeOpen[name];
       if (this.treeOpen[name]) {
         const treeCat = this.tree.find(c => c.name === name);
         if (treeCat && !treeCat._tags) {
+          if (this._treeLoading) return;
+          this._treeLoading = name;
           this.treeModal = true;
           this.treeModalProgress = 0;
           try {
@@ -238,6 +251,7 @@ function app() {
             console.error('toggleCategory:', e);
             treeCat._tags = [];
           } finally {
+            this._treeLoading = null;
             this.treeModal = false;
           }
         }
@@ -253,6 +267,7 @@ function app() {
       }
       try {
         const res = await fetch(`/api/tags/search?pack_id=${this.selectedPackId}&q=${encodeURIComponent(this.searchQuery)}&limit=20`);
+        if (!res.ok) { console.error('searchTags status:', res.status); return; }
         this.searchResults = await res.json();
       } catch (e) {
         console.error('search:', e);
@@ -263,8 +278,7 @@ function app() {
 
     resolveBlockId(category, subcategory) {
       if (category === 'const') {
-        const map = { 'quality': 1, 'sources': 2, 'rating': 3, 'pose': 5, 'scene': 6, 'style': 7 };
-        return map[subcategory] || 4;
+        return BLOCK_IDS[subcategory] || 4;
       }
       return 4;
     },
@@ -321,11 +335,6 @@ function app() {
       if (idx !== -1) arr.splice(idx, 1);
       this.updateChipNames();
       this.autoSavePrompt();
-    },
-
-    getChipIndex(type, name) {
-      const arr = type === 'positive' ? this.positiveChips : this.negativeChips;
-      return arr.findIndex(c => c.name === name);
     },
 
     // ─── Drag & drop ───
@@ -413,11 +422,13 @@ function app() {
       this._clearDropVisuals();
       const name = this.dragState?.name;
       if (!name) return;
-      const srcArr = this.positiveChips.find(c => c.name === name) ? this.positiveChips : this.negativeChips;
-      const tgtArr = targetType === 'positive' ? this.positiveChips : this.negativeChips;
-      const chip = srcArr.find(c => c.name === name);
+      const allChips = [...this.positiveChips, ...this.negativeChips];
+      const chip = allChips.find(c => c.name === name);
       if (!chip) return;
-      const targetBlockId = parseInt(ev.currentTarget.dataset.blockId) || 4;
+      const srcArr = this.positiveChips.includes(chip) ? this.positiveChips : this.negativeChips;
+      const tgtArr = targetType === 'positive' ? this.positiveChips : this.negativeChips;
+      const raw = parseInt(ev.currentTarget.dataset.blockId);
+      const targetBlockId = isNaN(raw) ? 4 : raw;
       const dt = this.dropTarget;
 
       // Remove from old position
@@ -453,7 +464,8 @@ function app() {
       this.autoSavePrompt();
     },
 
-    clearAll() {
+    clearAll(confirmMsg) {
+      if (confirmMsg && !confirm(confirmMsg)) return;
       this.positiveChips.splice(0);
       this.negativeChips.splice(0);
       this.updateChipNames();
@@ -465,17 +477,17 @@ function app() {
     addCustomTag(negative) {
       const name = this.customTag.trim();
       if (!name) return;
-      const ch = { name, category: 'custom', subcategory: '', block_id: 4 };
+      const ch = { name, category: 'custom', subcategory: '', block_id: this.resolveBlockIdByName(name) };
+      // Remove from both arrays first (toggle behavior)
+      const posIdx = this.positiveChips.findIndex(c => c.name === name);
+      const negIdx = this.negativeChips.findIndex(c => c.name === name);
+      if (posIdx !== -1) this.positiveChips.splice(posIdx, 1);
+      if (negIdx !== -1) this.negativeChips.splice(negIdx, 1);
+      // Add to target array
       if (negative) {
-        const posIdx = this.positiveChips.findIndex(c => c.name === name);
-        if (posIdx !== -1) this.positiveChips.splice(posIdx, 1);
-        if (!this.negativeChips.some(c => c.name === name)) {
-          this.negativeChips.push(ch);
-        }
+        this.negativeChips.push(ch);
       } else {
-        if (!this.positiveChips.some(c => c.name === name)) {
-          this.positiveChips.push(ch);
-        }
+        this.positiveChips.push(ch);
       }
       this.customTag = '';
       this.updateChipNames();
@@ -576,7 +588,7 @@ function app() {
 
     // ─── Prompt actions ───
 
-    async savePrompt() {
+    savePrompt() {
       this.savePromptName = '';
       this.saveModalOpen = true;
     },
@@ -584,7 +596,7 @@ function app() {
     async doSavePrompt() {
       if (!this.savePromptName.trim()) return;
       try {
-        await fetch('/api/prompts', {
+        const res = await fetch('/api/prompts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -593,6 +605,7 @@ function app() {
             negative_text: this.negativePrompt
           })
         });
+        if (!res.ok) { console.error('doSavePrompt status:', res.status); return; }
         this.saveModalOpen = false;
         this.loadHistory();
       } catch (e) {
@@ -603,6 +616,7 @@ function app() {
     async loadHistory() {
       try {
         const res = await fetch('/api/prompts?favorites=0');
+        if (!res.ok) { console.error('loadHistory status:', res.status); return; }
         this.history = await res.json();
       } catch (e) {
         console.error('loadHistory:', e);
@@ -612,6 +626,7 @@ function app() {
     async loadFavoritePrompts() {
       try {
         const res = await fetch('/api/prompts?favorites=1');
+        if (!res.ok) { console.error('loadFavoritePrompts status:', res.status); return; }
         this.favoritePrompts = await res.json();
       } catch (e) {
         console.error('loadFavPrompts:', e);
@@ -622,7 +637,7 @@ function app() {
       if (!name) return;
       try {
         await navigator.clipboard.writeText(name);
-        this.showToast((this.t('toast.copied') || 'Скопировано: ') + name);
+        this.showToast((this.t('toast.copied') || 'Скопировано') + ': ' + name);
       } catch (e) {
         console.error('copyTagName:', e);
       }
@@ -636,6 +651,7 @@ function app() {
     },
 
     async copyPrompt(type) {
+      if (type !== 'positive' && type !== 'negative') return;
       const text = type === 'positive' ? this.positivePrompt : this.negativePrompt;
       if (!text) return;
       try {
@@ -678,13 +694,13 @@ function app() {
       this._tagImgId++;
       const myId = this._tagImgId;
       const el = event.currentTarget;
-      const rect = el.getBoundingClientRect();
       const img = new Image();
       img.onload = () => {
         if (myId !== this._tagImgId) return;
         if (img.naturalWidth <= 1) return;
         this.tagImage = img.src;
-        this.tagImagePos = { x: rect.left, y: rect.bottom + 4 };
+        const r = el.getBoundingClientRect();
+        this.tagImagePos = { x: r.left, y: r.bottom + 4 };
       };
       img.onerror = () => {
         if (myId !== this._tagImgId) return;
@@ -744,8 +760,8 @@ function app() {
     get positivePrompt() {
       const groups = [[], [], [], [], [], [], []];
       for (const ch of this.positiveChips) {
-        const idx = (ch.block_id || 4) - 1;
-        if (idx >= 0 && idx < 7) groups[idx].push(ch.name);
+        const idx = Math.max(0, Math.min((ch.block_id || 4) - 1, 6));
+        groups[idx].push(ch.name);
       }
       return groups.filter(g => g.length > 0).map(g => g.join(', ')).join(' BREAK ');
     },
@@ -779,10 +795,11 @@ function app() {
 function promptPreview(text) {
   if (!text) return '';
   const parts = text.split('BREAK').map(s => s.trim()).filter(s => s.length > 0);
-  return parts.join(' | ').substring(0, 100) + (text.length > 100 ? '...' : '');
+  const result = parts.join(' | ');
+  return result.substring(0, 100) + (result.length > 100 ? '...' : '');
 }
 
 function parsePromptData(text) {
   if (!text) return [];
-  return text.split(/BREAK|,/).map(s => s.trim()).filter(s => s.length > 0);
+  return text.split(/BREAK|,\s*/).map(s => s.trim()).filter(s => s.length > 0);
 }

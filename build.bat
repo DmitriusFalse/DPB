@@ -44,6 +44,19 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+:: Increment build number
+set VERSION_FILE=version.txt
+if exist "%VERSION_FILE%" (
+    set /p VERSION=<"%VERSION_FILE%"
+    for /f "tokens=1,2,3 delims=." %%a in ("!VERSION!") do (
+        set MAJOR=%%a
+        set MINOR=%%b
+        set BUILD=%%c
+    )
+    set /a BUILD+=1
+    >"%VERSION_FILE%" echo !MAJOR!.!MINOR!.!BUILD!
+)
+
 echo [4/4] Building binary...
 :: -s -w: strip debug info
 :: -H=windowsgui: hide console window

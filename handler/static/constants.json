@@ -62,5 +62,17 @@
       { "name": "Артефакты", "tags": ["text", "error", "signature", "watermark", "username", "cropped", "border", "frame", "letterbox", "artifacts", "noise", "chromatic_aberration"] },
       { "name": "Противоположные стили", "tags": ["sketch", "painting", "drawing", "3d", "cgi", "render", "cartoon", "anime", "comic", "manga", "low_detail", "flat", "simple", "amateur", "stock_photo"] }
     ]
+  },
+  {
+    "name": "Внешность и кадрирование",
+    "tkey": "const.appearance",
+    "subcategories": [
+      { "name": "Количество персонажей", "tags": ["solo", "1girl", "1boy", "1other", "2girls", "2boys", "3girls", "3boys", "4girls", "4boys", "5girls", "multiple_girls", "multiple_boys", "group", "no_humans", "crowd"] },
+      { "name": "Кадрирование", "tags": ["upper_body", "lower_body", "full_body", "close-up", "face_focus", "portrait", "headshot", "waist_up", "cowboy_shot", "dutch_angle", "straight-on", "from_side", "from_behind", "from_above", "from_below"] },
+      { "name": "Цвет волос", "tags": ["blonde_hair", "brown_hair", "black_hair", "red_hair", "blue_hair", "pink_hair", "purple_hair", "green_hair", "white_hair", "grey_hair", "silver_hair", "orange_hair", "multicolored_hair", "auburn_hair"] },
+      { "name": "Причёска", "tags": ["long_hair", "short_hair", "medium_hair", "very_long_hair", "very_short_hair", "straight_hair", "curly_hair", "wavy_hair", "spiked_hair", "messy_hair", "bald", "ahoge", "twin_tails", "ponytail", "braid", "bun"] },
+      { "name": "Цвет глаз", "tags": ["blue_eyes", "green_eyes", "brown_eyes", "red_eyes", "yellow_eyes", "purple_eyes", "grey_eyes", "black_eyes", "pink_eyes", "orange_eyes", "heterochromia", "multicolored_eyes"] },
+      { "name": "Телосложение", "tags": ["slim", "slender", "muscular", "athletic", "curvy", "chubby", "fat", "petite", "medium_breasts", "large_breasts", "small_breasts", "huge_breasts", "flat_chest"] }
+    ]
   }
 ]

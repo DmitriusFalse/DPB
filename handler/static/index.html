@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title x-text="t('app.title')">Danbooru Prompt Builder</title>
+  <title x-text="t('app.title') + (version ? ' v' + version : '')">Danbooru Prompt Builder</title>
   <link rel="manifest" href="/static/manifest.json">
   <link rel="icon" type="image/x-icon" href="/static/icon.ico">
   <link rel="stylesheet" href="/static/styles.css">
@@ -37,7 +37,7 @@
 <body class="bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-100 h-screen overflow-hidden flex flex-col">
   <!-- Header -->
   <header class="flex items-center gap-3 px-4 py-2 border-b border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-700 shrink-0">
-    <h1 class="text-lg font-bold whitespace-nowrap" x-text="t('app.title')">Danbooru Prompt Builder</h1>
+    <h1 class="text-lg font-bold whitespace-nowrap" x-text="t('app.title') + (version ? ' v' + version : '')">Danbooru Prompt Builder</h1>
     <span class="text-sm text-gray-500 dark:text-dark-400 shrink-0" x-text="t('packs.label')">Наборы</span>
     <div class="relative" x-data="{ dpOpen: false }" style="min-width:200px">
       <button @click="dpOpen = !dpOpen" @click.outside="dpOpen = false" class="w-full flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-white dark:bg-dark-600 cursor-pointer transition-colors" :class="{ 'rounded-b-none': dpOpen }">
@@ -326,7 +326,7 @@
         </div>
         <div class="flex flex-wrap gap-1.5">
           <button @click="savePrompt()" class="px-3 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700" x-text="t('actions.save')">💾 Сохранить</button>
-          <button @click="clearAll()" class="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700" x-text="t('actions.clear')">🗑 Очистить</button>
+          <button @click="clearAll(t('actions.clear_confirm') || 'Clear all chips?')" class="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700" x-text="t('actions.clear')">🗑 Очистить</button>
           <button @click="drawerOpen = !drawerOpen" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" x-text="t('actions.history')">📂 История</button>
         </div>
         <!-- Tag images gallery -->
@@ -336,7 +336,7 @@
             <div class="flex flex-wrap gap-3 justify-center">
               <template x-for="ch in [...positiveChips, ...negativeChips].filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)" :key="ch.name">
                 <div class="flex flex-col items-center gap-1" x-data="{ err: false }" x-show="!err">
-                  <img :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
+                  <img loading="lazy" :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
                   <span class="text-[10px] text-gray-500 truncate max-w-32 text-center" x-text="ch.name"></span>
                 </div>
               </template>
@@ -429,7 +429,7 @@
 
   <!-- Tag image preview -->
   <div x-show="tagImage" class="fixed z-50 pointer-events-none" :style="'left: ' + tagImagePos.x + 'px; top: ' + tagImagePos.y + 'px'">
-    <img :src="tagImage" class="max-w-60 max-h-60 rounded shadow-xl border border-gray-300 dark:border-dark-500">
+    <img loading="lazy" :src="tagImage" class="max-w-60 max-h-60 rounded shadow-xl border border-gray-300 dark:border-dark-500">
   </div>
 
   <div x-show="toastVisible" class="toast">

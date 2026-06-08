@@ -26,6 +26,7 @@
   "const.scene": "Теги сцены и настройки",
   "const.style": "Теги стиля и освещения",
   "const.negative": "Негативные теги",
+  "const.appearance": "Внешность и кадрирование",
 
   "presets.label": "Пресеты",
 
@@ -52,6 +53,7 @@
 
   "actions.save": "💾 Сохранить",
   "actions.clear": "🗑 Очистить",
+  "actions.clear_confirm": "Очистить все чипы?",
   "actions.history": "📂 История",
   "actions.cancel": "Отмена",
 
@@ -71,7 +73,7 @@
   "modal.save.confirm": "Сохранить",
   "modal.loading.title": "Загрузка тегов...",
 
-  "toast.copied": "Скопировано: ",
+  "toast.copied": "Скопировано",
 
   "packs.rescan": "Пересканировать",
   "packs.delete": "Удалить",

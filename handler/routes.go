@@ -17,7 +17,7 @@ func RegisterRoutes(mux *http.ServeMux, db *sql.DB, cfg *config.Config, syncSvc 
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/static/icon.ico", http.StatusMovedPermanently)
 	})
-	mux.HandleFunc("/", handleIndex(cfg))
+	mux.HandleFunc("/", handleIndex())
 	mux.HandleFunc("/settings", handleSettingsPage())
 
 	api := func(h http.HandlerFunc) http.HandlerFunc {
@@ -26,14 +26,14 @@ func RegisterRoutes(mux *http.ServeMux, db *sql.DB, cfg *config.Config, syncSvc 
 
 	mux.HandleFunc("/api/config", api(handleConfig(cfg, configPath)))
 	mux.HandleFunc("/api/pack", api(handleGetPackByID(repo)))
-	mux.HandleFunc("/api/pack/info", api(handleReadPackInfoFromReader(repo, cfg)))
-	mux.HandleFunc("/api/packs", api(handlePacks(repo, cfg)))
+	mux.HandleFunc("/api/pack/info", api(handleReadPackInfoFromReader(repo)))
+	mux.HandleFunc("/api/packs", api(handlePacks(repo)))
 	mux.HandleFunc("/api/sync", api(handleSync(syncSvc, cfg)))
 	mux.HandleFunc("/api/tags/search", api(handleSearch(repo)))
 	mux.HandleFunc("/api/tags/tree", api(handleTree(repo)))
 	mux.HandleFunc("/api/favorites", api(handleFavorites(repo)))
 	mux.HandleFunc("/api/presets", api(handlePresets(repo)))
 	mux.HandleFunc("/api/static/image", api(handleStaticImage(cfg)))
-	mux.HandleFunc("/api/tags/image", api(handleTagImage(repo, cfg)))
+	mux.HandleFunc("/api/tags/image", api(handleTagImage(repo)))
 	mux.HandleFunc("/api/prompts", api(handlePrompts(repo)))
 }

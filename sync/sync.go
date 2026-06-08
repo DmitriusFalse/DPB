@@ -54,7 +54,10 @@ func (s *Service) Sync(tagsPath string) error {
 			return fmt.Errorf("sync files for %s: %w", pack.Name, err)
 		}
 
-		categoriesJSON, _ := json.Marshal(pack.Categories)
+		categoriesJSON, err := json.Marshal(pack.Categories)
+		if err != nil {
+			return fmt.Errorf("marshal categories for %s: %w", pack.Name, err)
+		}
 		if err := s.repo.UpdatePackMeta(dbPack.ID,
 			pack.Description, pack.DescriptionRu,
 			pack.Version, pack.Author, pack.Icon, pack.NameRu,

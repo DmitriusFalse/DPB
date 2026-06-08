@@ -30,15 +30,15 @@ func serveEmbedded(w http.ResponseWriter, r *http.Request, path string) {
 
 func detectContentType(path string) string {
 	switch {
-	case len(path) > 5 && path[len(path)-5:] == ".html":
+	case len(path) >= 5 && path[len(path)-5:] == ".html":
 		return "text/html; charset=utf-8"
-	case len(path) > 4 && path[len(path)-4:] == ".css":
+	case len(path) >= 4 && path[len(path)-4:] == ".css":
 		return "text/css; charset=utf-8"
-	case len(path) > 3 && path[len(path)-3:] == ".js":
+	case len(path) >= 3 && path[len(path)-3:] == ".js":
 		return "application/javascript; charset=utf-8"
-	case len(path) > 5 && path[len(path)-5:] == ".json":
+	case len(path) >= 5 && path[len(path)-5:] == ".json":
 		return "application/json"
-	case len(path) > 4 && path[len(path)-4:] == ".ico":
+	case len(path) >= 4 && path[len(path)-4:] == ".ico":
 		return "image/x-icon"
 	default:
 		return "text/plain; charset=utf-8"

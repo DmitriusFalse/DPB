@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"danbooru-prompt-builder/config"
 	"danbooru-prompt-builder/database"
 	"danbooru-prompt-builder/sync"
 )
@@ -34,7 +33,7 @@ func handleGetPackByID(repo *database.Repo) http.HandlerFunc {
 	}
 }
 
-func handleReadPackInfoFromReader(repo *database.Repo, cfg *config.Config) http.HandlerFunc {
+func handleReadPackInfoFromReader(repo *database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.URL.Query().Get("id")
 		id, _ := strconv.Atoi(idStr)
@@ -68,7 +67,7 @@ func handleReadPackInfoFromReader(repo *database.Repo, cfg *config.Config) http.
 	}
 }
 
-func handlePacks(repo *database.Repo, cfg *config.Config) http.HandlerFunc {
+func handlePacks(repo *database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:

@@ -71,28 +71,28 @@
             <tr class="border-b border-gray-100 dark:border-dark-700">
               <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('settings.tags_path')">Путь к тегам</td>
               <td class="px-4 py-2.5">
-                <input type="text" x-model="cfg.tags_path" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+                <input type="text" x-model="cfg.tags_path" placeholder="./tags" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
               </td>
             </tr>
             <tr class="border-b border-gray-100 dark:border-dark-700">
               <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('settings.db_path')">Путь к БД</td>
               <td class="px-4 py-2.5">
-                <input type="text" x-model="cfg.db_path" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+                <input type="text" x-model="cfg.db_path" placeholder="./data.db" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
               </td>
             </tr>
             <tr class="border-b border-gray-100 dark:border-dark-700">
               <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('settings.log_level')">Уровень лога</td>
               <td class="px-4 py-2.5">
-                <select x-model="cfg.log_level" class="border rounded px-2 py-1 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
-                  <option value="error">error</option>
-                  <option value="debug">debug</option>
+                <select x-model="cfg.log_level" class="border rounded px-2 py-1 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500" title="error — только ошибки, debug — подробный лог">
+                  <option value="error">error — только ошибки</option>
+                  <option value="debug">debug — подробный лог</option>
                 </select>
               </td>
             </tr>
             <tr>
               <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('settings.logs_dir')">Папка логов</td>
               <td class="px-4 py-2.5">
-                <input type="text" x-model="cfg.logs_dir" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+                <input type="text" x-model="cfg.logs_dir" placeholder="./logs" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
               </td>
             </tr>
           </tbody>
