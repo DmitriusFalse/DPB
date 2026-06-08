@@ -81,6 +81,14 @@
   "packs.categories": "Categories",
   "settings.save": "Save",
   "settings.saved": "Settings saved (restart required for some changes)",
+  "block.1": "Quality",
+  "block.2": "Sources",
+  "block.3": "Rating",
+  "block.4": "Characters, Clothes, Body",
+  "block.5": "Pose & Action",
+  "block.6": "Scene & Setting",
+  "block.7": "Style & Lighting",
+
   "donate.title": "This simple app was made just for fun. Want to support the author? Toss a coin on Boosty",
   "donate.short1": "Toss a coin",
   "donate.short2": "on Boosty"

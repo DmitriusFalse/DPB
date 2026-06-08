@@ -452,3 +452,41 @@ button { font-family: inherit; cursor: pointer; color: inherit; background: none
 .dark .donate-link:hover .donate-heart {
   color: #f43f5e;
 }
+
+/* Block chip groups */
+.block-section {
+  margin-bottom: 6px;
+}
+.block-header {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c-text-400);
+  padding: 2px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.block-header .count {
+  font-size: 9px;
+  opacity: 0.6;
+}
+.chip-dragging {
+  opacity: 0.4;
+}
+.drop-before {
+  box-shadow: -3px 0 0 var(--c-blue-400), 0 0 0 1px var(--c-blue-400);
+}
+.drop-after {
+  box-shadow: 3px 0 0 var(--c-blue-400), 0 0 0 1px var(--c-blue-400);
+}
+.drag-over {
+  background: rgba(59,130,246,0.08);
+  border-radius: 4px;
+  outline: 1px dashed var(--c-blue-400);
+}
+.dark .drag-over {
+  background: rgba(59,130,246,0.15);
+  outline-color: var(--c-blue-600);
+}

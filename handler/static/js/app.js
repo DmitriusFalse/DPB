@@ -34,9 +34,28 @@ function app() {
     },
 
     async loadConstants() {
+      this.tagBlockMap = {};
       try {
         const res = await fetch('/static/constants.json');
         this.constantTags = await res.json();
+        const blockIds = { 'quality': 1, 'sources': 2, 'rating': 3, 'pose': 5, 'scene': 6, 'style': 7 };
+        for (const group of this.constantTags) {
+          const tkey = group.tkey || '';
+          const parts = tkey.split('.');
+          const cat = parts.length >= 2 ? parts[1] : '';
+          const blockId = blockIds[cat];
+          if (!blockId) continue;
+          if (group.tags) {
+            for (const tag of group.tags) this.tagBlockMap[tag] = blockId;
+          }
+          if (group.subcategories) {
+            for (const sub of group.subcategories) {
+              if (sub.tags) {
+                for (const tag of sub.tags) this.tagBlockMap[tag] = blockId;
+              }
+            }
+          }
+        }
       } catch (e) {
         console.error('Failed to load constants:', e);
         this.constantTags = [];
@@ -90,14 +109,17 @@ function app() {
     constOpen: {},
     constSubOpen: {},
     constantTags: [],
+    tagBlockMap: {},
 
     // Favorites
     favorites: [],
     favOpen: false,
 
-    // Chips as objects: { name, category, subcategory }
+    // Chips as objects: { name, category, subcategory, block_id }
     positiveChips: [],
     negativeChips: [],
+    dragState: null,
+    dropTarget: null,
 
     // Custom input
     customTag: '',
@@ -144,10 +166,25 @@ function app() {
         this.packs = list;
         if (this.packs.length > 0 && !this.selectedPackId) {
           this.selectedPackId = this.packs[0].id;
+          await this.refreshFreshCategories(this.selectedPackId);
           this.loadAll();
         }
       } catch (e) {
         console.error('loadPacks:', e);
+      }
+    },
+
+    async refreshFreshCategories(packId) {
+      try {
+        const res = await fetch(`/api/pack/info?id=${packId}`);
+        if (!res.ok) return;
+        const info = await res.json();
+        const pack = this.packs.find(p => p.id === packId);
+        if (pack && info.categories) {
+          pack.categories_list = info.categories;
+        }
+      } catch (e) {
+        console.error('refreshFreshCategories:', e);
       }
     },
 
@@ -224,12 +261,30 @@ function app() {
 
     // ─── Chips ───
 
+    resolveBlockId(category, subcategory) {
+      if (category === 'const') {
+        const map = { 'quality': 1, 'sources': 2, 'rating': 3, 'pose': 5, 'scene': 6, 'style': 7 };
+        return map[subcategory] || 4;
+      }
+      return 4;
+    },
+
+    resolveBlockIdByName(tagName) {
+      return this.tagBlockMap[tagName] || 4;
+    },
+
     makeChip(tag) {
-      return {
-        name: tag.tag_name,
-        category: tag.category_name || '',
-        subcategory: tag.subcategory_name || '',
-      };
+      const category = tag.category_name || '';
+      const subcategory = tag.subcategory_name || '';
+      let block_id = this.resolveBlockId(category, subcategory);
+      if (block_id === 4) {
+        const pack = this.packs.find(p => p.id === this.selectedPackId);
+        if (pack && pack.categories_list) {
+          const catCfg = pack.categories_list.find(c => c.name === category);
+          if (catCfg && catCfg.block_id) block_id = catCfg.block_id;
+        }
+      }
+      return { name: tag.tag_name, category, subcategory, block_id };
     },
 
     addTag(tag) {
@@ -260,12 +315,140 @@ function app() {
       this.autoSavePrompt();
     },
 
-    removeChip(type, idx) {
-      if (type === 'positive') {
-        this.positiveChips.splice(idx, 1);
-      } else {
-        this.negativeChips.splice(idx, 1);
+    removeChip(type, name) {
+      const arr = type === 'positive' ? this.positiveChips : this.negativeChips;
+      const idx = arr.findIndex(c => c.name === name);
+      if (idx !== -1) arr.splice(idx, 1);
+      this.updateChipNames();
+      this.autoSavePrompt();
+    },
+
+    getChipIndex(type, name) {
+      const arr = type === 'positive' ? this.positiveChips : this.negativeChips;
+      return arr.findIndex(c => c.name === name);
+    },
+
+    // ─── Drag & drop ───
+
+    onDragStart(ev, name) {
+      this.dragState = { name };
+      ev.dataTransfer.effectAllowed = 'move';
+      ev.dataTransfer.setData('text/plain', name);
+      ev.currentTarget.classList.add('chip-dragging');
+    },
+
+    _clearDropVisuals() {
+      document.querySelectorAll('.drag-over, .drop-before, .drop-after')
+        .forEach(el => el.classList.remove('drag-over', 'drop-before', 'drop-after'));
+    },
+
+    onDragEnd(ev) {
+      ev.currentTarget.classList.remove('chip-dragging');
+      this._clearDropVisuals();
+      this.dragState = null;
+      this.dropTarget = null;
+    },
+
+    onDragOver(ev) {
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'move';
+      const name = this.dragState?.name;
+      if (!name) return;
+      const blockEl = ev.currentTarget.closest('[data-block-id]') || ev.currentTarget;
+      const chipEls = [...blockEl.querySelectorAll('[data-chip-name]')]
+        .filter(el => el.dataset.chipName !== name);
+      // Find closest chip by Euclidean distance to center
+      let closestEl = null, closestDist = Infinity;
+      for (const el of chipEls) {
+        const r = el.getBoundingClientRect();
+        const dx = ev.clientX - (r.left + r.width / 2);
+        const dy = ev.clientY - (r.top + r.height / 2);
+        const d = dx * dx + dy * dy;
+        if (d < closestDist) { closestDist = d; closestEl = el; }
       }
+      // Compute new drop target
+      let newInsertBeforeName = null, newInsertAfterName = null;
+      if (closestEl) {
+        const r = closestEl.getBoundingClientRect();
+        if (ev.clientX < r.left + r.width / 2) {
+          newInsertBeforeName = closestEl.dataset.chipName;
+        } else {
+          newInsertAfterName = closestEl.dataset.chipName;
+        }
+      }
+      // Update visual if changed
+      const prev = this.dropTarget;
+      if (!prev || prev.before !== newInsertBeforeName || prev.after !== newInsertAfterName) {
+        // Clear old visuals on all chips
+        blockEl.querySelectorAll('.drop-before, .drop-after')
+          .forEach(el => el.classList.remove('drop-before', 'drop-after'));
+        // Apply new visual
+        if (newInsertBeforeName) {
+          const el = blockEl.querySelector(`[data-chip-name="${CSS.escape(newInsertBeforeName)}"]`);
+          if (el) el.classList.add('drop-before');
+        }
+        if (newInsertAfterName) {
+          const el = blockEl.querySelector(`[data-chip-name="${CSS.escape(newInsertAfterName)}"]`);
+          if (el) el.classList.add('drop-after');
+        }
+        this.dropTarget = { before: newInsertBeforeName, after: newInsertAfterName };
+      }
+    },
+
+    onDragEnter(ev) {
+      ev.preventDefault();
+      if (!ev.currentTarget.contains(ev.relatedTarget)) {
+        ev.currentTarget.classList.add('drag-over');
+      }
+    },
+
+    onDragLeave(ev) {
+      if (!ev.currentTarget.contains(ev.relatedTarget)) {
+        ev.currentTarget.classList.remove('drag-over');
+      }
+    },
+
+    onDrop(ev, targetType) {
+      ev.preventDefault();
+      this._clearDropVisuals();
+      const name = this.dragState?.name;
+      if (!name) return;
+      const srcArr = this.positiveChips.find(c => c.name === name) ? this.positiveChips : this.negativeChips;
+      const tgtArr = targetType === 'positive' ? this.positiveChips : this.negativeChips;
+      const chip = srcArr.find(c => c.name === name);
+      if (!chip) return;
+      const targetBlockId = parseInt(ev.currentTarget.dataset.blockId) || 4;
+      const dt = this.dropTarget;
+
+      // Remove from old position
+      const oldIdx = srcArr.indexOf(chip);
+      srcArr.splice(oldIdx, 1);
+
+      // Update block_id for target
+      chip.block_id = targetBlockId;
+
+      if (dt && dt.before) {
+        const idx = tgtArr.findIndex(c => c.name === dt.before);
+        tgtArr.splice(idx < 0 ? 0 : idx, 0, chip);
+      } else if (dt && dt.after) {
+        const idx = tgtArr.findIndex(c => c.name === dt.after);
+        tgtArr.splice(idx < 0 ? tgtArr.length : idx + 1, 0, chip);
+      } else {
+        // No target — append to end of block
+        const blockChips = tgtArr.filter(c => (c.block_id || 4) === targetBlockId);
+        if (blockChips.length > 0) {
+          const lastInBlock = blockChips[blockChips.length - 1];
+          tgtArr.splice(tgtArr.indexOf(lastInBlock) + 1, 0, chip);
+        } else {
+          let insertIdx = 0;
+          for (let i = 0; i < tgtArr.length; i++) {
+            if ((tgtArr[i].block_id || 4) < targetBlockId) insertIdx = i + 1;
+          }
+          tgtArr.splice(insertIdx, 0, chip);
+        }
+      }
+      this.dragState = null;
+      this.dropTarget = null;
       this.updateChipNames();
       this.autoSavePrompt();
     },
@@ -282,7 +465,7 @@ function app() {
     addCustomTag(negative) {
       const name = this.customTag.trim();
       if (!name) return;
-      const ch = { name, category: 'custom', subcategory: '' };
+      const ch = { name, category: 'custom', subcategory: '', block_id: 4 };
       if (negative) {
         const posIdx = this.positiveChips.findIndex(c => c.name === name);
         if (posIdx !== -1) this.positiveChips.splice(posIdx, 1);
@@ -362,7 +545,7 @@ function app() {
       for (let i = 0; i < posParts.length; i++) {
         const sub = posSubs[i] || 'general';
         for (const n of posParts[i]) {
-          const ch = { name: n, category: 'meta', subcategory: sub };
+          const ch = { name: n, category: 'meta', subcategory: sub, block_id: this.resolveBlockIdByName(n) };
           if (!this.positiveChips.some(c => c.name === ch.name)) {
             this.positiveChips.push(ch);
           }
@@ -370,7 +553,7 @@ function app() {
       }
 
       for (const n of data.negative) {
-        const ch = { name: n, category: 'meta', subcategory: 'general' };
+        const ch = { name: n, category: 'meta', subcategory: 'general', block_id: 4 };
         if (!this.negativeChips.some(c => c.name === ch.name)) {
           this.negativeChips.push(ch);
         }
@@ -467,14 +650,14 @@ function app() {
       this.clearAll();
       const posParser = parsePromptData(p.positive_text);
       for (const n of posParser) {
-        const ch = { name: n, category: 'meta', subcategory: 'loaded' };
+        const ch = { name: n, category: 'meta', subcategory: 'loaded', block_id: this.resolveBlockIdByName(n) };
         if (!this.positiveChips.some(c => c.name === n)) {
           this.positiveChips.push(ch);
         }
       }
       const negParser = parsePromptData(p.negative_text);
       for (const n of negParser) {
-        const ch = { name: n, category: 'meta', subcategory: 'loaded' };
+        const ch = { name: n, category: 'meta', subcategory: 'loaded', block_id: this.resolveBlockIdByName(n) };
         if (!this.negativeChips.some(c => c.name === n)) {
           this.negativeChips.push(ch);
         }
@@ -540,13 +723,13 @@ function app() {
             const posTags = parsePromptData(data.positive_text || '');
             const negTags = parsePromptData(data.negative_text || '');
             for (const n of posTags) {
-              const ch = { name: n, category: 'meta', subcategory: 'autosave' };
+              const ch = { name: n, category: 'meta', subcategory: 'autosave', block_id: this.resolveBlockIdByName(n) };
               if (!this.positiveChips.some(c => c.name === n)) {
                 this.positiveChips.push(ch);
               }
             }
             for (const n of negTags) {
-              const ch = { name: n, category: 'meta', subcategory: 'autosave' };
+              const ch = { name: n, category: 'meta', subcategory: 'autosave', block_id: this.resolveBlockIdByName(n) };
               if (!this.negativeChips.some(c => c.name === n)) {
                 this.negativeChips.push(ch);
               }
@@ -561,41 +744,18 @@ function app() {
     get positivePrompt() {
       const groups = [[], [], [], [], [], [], []];
       for (const ch of this.positiveChips) {
-        const idx = this.blockIndex(ch.category);
+        const idx = (ch.block_id || 4) - 1;
         if (idx >= 0 && idx < 7) groups[idx].push(ch.name);
       }
       return groups.filter(g => g.length > 0).map(g => g.join(', ')).join(' BREAK ');
     },
 
     get negativePrompt() {
-      const groups = [[], [], []];
-      for (const ch of this.negativeChips) {
-        const idx = this.negBlockIndex(ch.category);
-        if (idx >= 0 && idx < 3) groups[idx].push(ch.name);
-      }
-      return groups.filter(g => g.length > 0).map(g => g.join(', ')).join(' BREAK ');
+      return this.negativeChips.map(ch => ch.name).join(', ');
     },
 
-    blockIndex(category) {
-      const map = {
-        'artist': 0, 'artist_groups': 0, 'individual_artists': 0,
-        'copyright': 1, 'game': 1, 'series': 1, 'games': 1, 'anime': 1,
-        'character': 2, 'characters': 2,
-        'general': 3,
-        'species': 4,
-        'rating': 5,
-        'quality_resolution': 6, 'meta': 6
-      };
-      return map[category] ?? 3;
-    },
-
-    negBlockIndex(category) {
-      const map = {
-        'general': 0, 'species': 0, 'character': 0, 'characters': 0,
-        'quality_resolution': 1, 'meta': 1,
-        'rating': 2
-      };
-      return map[category] ?? 0;
+    positiveByBlock(blockId) {
+      return this.positiveChips.filter(c => (c.block_id || 4) === blockId);
     },
 
     // ─── Bulk ───

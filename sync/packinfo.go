@@ -10,9 +10,10 @@ import (
 )
 
 type CategoryInfo struct {
-	Name   string `json:"name"`
-	NameRu string `json:"name_ru,omitempty"`
-	File   string `json:"file"`
+	Name    string `json:"name"`
+	NameRu  string `json:"name_ru,omitempty"`
+	File    string `json:"file"`
+	BlockID int    `json:"block_id,omitempty"`
 }
 
 type PackInfo struct {
@@ -110,16 +111,27 @@ func WritePackInfo(packPath string, info *PackInfo) error {
 }
 
 func SaveGeneratedPackInfo(packPath string) (*PackInfo, error) {
-	info, err := ReadPackInfo(packPath)
-	if err != nil {
-		info2, genErr := GeneratePackInfo(packPath)
+	infoPath := filepath.Join(packPath, "info.pack")
+	if _, err := os.Stat(infoPath); err != nil {
+		// info.pack does not exist — generate and write
+		info, genErr := GeneratePackInfo(packPath)
 		if genErr != nil {
 			return nil, genErr
 		}
-		info = info2
 		if err := WritePackInfo(packPath, info); err != nil {
 			return nil, err
 		}
+		return info, nil
+	}
+	// info.pack exists — read it
+	info, err := ReadPackInfo(packPath)
+	if err != nil {
+		// Corrupted or incompatible — use generated fallback in memory only, do NOT overwrite the file
+		fallback, genErr := GeneratePackInfo(packPath)
+		if genErr != nil {
+			return nil, genErr
+		}
+		return fallback, nil
 	}
 	return info, nil
 }

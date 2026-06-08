@@ -56,7 +56,7 @@
            class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg"
            style="margin-top:-1px;transition-duration:150ms">
         <template x-for="p in packs" :key="p.id">
-          <button @click="selectedPackId = p.id; loadTree(); dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors flex items-center gap-1.5" :class="selectedPackId === p.id ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+          <button @click="selectedPackId = p.id; refreshFreshCategories(p.id); loadTree(); dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors flex items-center gap-1.5" :class="selectedPackId === p.id ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
             <span class="text-base shrink-0" x-text="p.icon || '📦'"></span>
             <span x-text="lang === 'ru' && p.name_ru ? p.name_ru : p.name"></span>
           </button>
@@ -176,8 +176,8 @@
                   <template x-for="tag in cat.tags" :key="tag">
                     <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="copyTagName(tag)">
                       <span x-text="tag" class="max-w-40 truncate"></span>
-                      <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
-                      <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                      <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
+                      <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
                     </span>
                   </template>
                 </div>
@@ -193,8 +193,8 @@
                       <template x-for="tag in sub.tags" :key="tag">
                     <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="copyTagName(tag)">
                           <span x-text="tag" class="max-w-40 truncate"></span>
-                          <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: sub.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
-                          <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: sub.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                          <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
+                          <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
                         </span>
                       </template>
                     </div>
@@ -235,30 +235,67 @@
     <!-- Workspace — 30% -->
     <main class="flex-[3] min-w-[30%] flex flex-col overflow-hidden">
       <!-- Chips -->
-      <div class="p-3 border-b border-gray-200 dark:border-dark-600 overflow-y-auto max-h-48">
-        <div class="text-xs font-semibold mb-1 flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
-          <span x-text="t('workspace.positive')">Позитивные теги</span>
-        </div>
-        <div class="flex flex-wrap gap-1 min-h-[28px] mb-3">
-          <template x-for="(ch, i) in positiveChips" :key="i">
-            <span class="chip chip-positive" @click="removeChip('positive', i)" @mouseenter="showTagImage($event, ch.name, ch.category === 'const')" @mouseleave="hideTagImage()">
-              <span x-text="ch.name" class="max-w-48 truncate"></span>
-              <span class="text-xs opacity-60 hover:opacity-100">x</span>
-            </span>
+      <div class="p-3 border-b border-gray-200 dark:border-dark-600 overflow-y-auto flex-1 min-h-0 flex flex-col gap-3">
+        <!-- Positive chips grouped by blocks -->
+        <div>
+          <div class="text-xs font-semibold mb-1 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
+            <span x-text="t('workspace.positive')">Позитивные теги</span>
+          </div>
+          <template x-for="blockId in [1,2,3,4,5,6,7]" :key="'pb'+blockId">
+            <div class="block-section" x-show="positiveByBlock(blockId).length > 0"
+                 :data-block-id="blockId"
+                 @dragover="onDragOver($event)"
+                 @dragenter="onDragEnter($event)"
+                 @dragleave="onDragLeave($event)"
+                 @drop.prevent="onDrop($event, 'positive')">
+              <div class="block-header">
+                <span x-text="t('block.' + blockId)"></span>
+                <span class="count" x-text="'(' + positiveByBlock(blockId).length + ')'"></span>
+              </div>
+              <div class="flex flex-wrap gap-1">
+                <template x-for="ch in positiveByBlock(blockId)" :key="ch.name">
+                  <span class="chip chip-positive" draggable="true"
+                        @dragstart="onDragStart($event, ch.name)"
+                        @dragend="onDragEnd($event)"
+                        @click="removeChip('positive', ch.name)"
+                        @mouseenter="showTagImage($event, ch.name, ch.category === 'const')"
+                        @mouseleave="hideTagImage()"
+                        :data-chip-name="ch.name">
+                    <span x-text="ch.name" class="max-w-48 truncate"></span>
+                    <span class="text-xs opacity-60 hover:opacity-100">x</span>
+                  </span>
+                </template>
+              </div>
+            </div>
           </template>
         </div>
-        <div class="text-xs font-semibold mb-1 flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
-          <span x-text="t('workspace.negative')">Негативные теги</span>
-        </div>
-        <div class="flex flex-wrap gap-1 min-h-[28px]">
-          <template x-for="(ch, i) in negativeChips" :key="i">
-            <span class="chip chip-negative" @click="removeChip('negative', i)" @mouseenter="showTagImage($event, ch.name, ch.category === 'const')" @mouseleave="hideTagImage()">
-              <span x-text="ch.name" class="max-w-48 truncate"></span>
-              <span class="text-xs opacity-60 hover:opacity-100">x</span>
-            </span>
-          </template>
+
+        <!-- Negative chips -->
+        <div>
+          <div class="text-xs font-semibold mb-1 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+            <span x-text="t('workspace.negative')">Негативные теги</span>
+          </div>
+          <div :data-block-id="0"
+               @dragover="onDragOver($event)"
+               @dragenter="onDragEnter($event)"
+               @dragleave="onDragLeave($event)"
+               @drop.prevent="onDrop($event, 'negative')"
+               class="flex flex-wrap gap-1 min-h-[28px]">
+            <template x-for="ch in negativeChips" :key="ch.name">
+              <span class="chip chip-negative" draggable="true"
+                    @dragstart="onDragStart($event, ch.name)"
+                    @dragend="onDragEnd($event)"
+                    @click="removeChip('negative', ch.name)"
+                    @mouseenter="showTagImage($event, ch.name, ch.category === 'const')"
+                    @mouseleave="hideTagImage()"
+                    :data-chip-name="ch.name">
+                <span x-text="ch.name" class="max-w-48 truncate"></span>
+                <span class="text-xs opacity-60 hover:opacity-100">x</span>
+              </span>
+            </template>
+          </div>
         </div>
       </div>
 

@@ -58,23 +58,19 @@ if %errorlevel% neq 0 (
 
 del rsrc.syso
 
-:: Copy config alongside the binary if it doesn't exist yet
-if not exist "%BUILD_DIR%\config.json" (
-    copy config.json "%BUILD_DIR%\config.json" >nul
-)
+:: Copy config alongside the binary
+copy /Y config.json "%BUILD_DIR%\config.json" >nul
 
 :: Copy tags folder alongside the binary
 if exist "tags" (
-    if not exist "%BUILD_DIR%\tags" (
-        xcopy /E /I /Q "tags" "%BUILD_DIR%\tags" >nul
-    )
+    if exist "%BUILD_DIR%\tags" rd /s /q "%BUILD_DIR%\tags"
+    xcopy /E /I /Q "tags" "%BUILD_DIR%\tags" >nul
 )
 
 :: Copy static images alongside the binary
 if exist "handler\img" (
-    if not exist "%BUILD_DIR%\img" (
-        xcopy /E /I /Q "handler\img" "%BUILD_DIR%\img" >nul
-    )
+    if exist "%BUILD_DIR%\img" rd /s /q "%BUILD_DIR%\img"
+    xcopy /E /I /Q "handler\img" "%BUILD_DIR%\img" >nul
 )
 
 :: Clean up junk files left after tests
