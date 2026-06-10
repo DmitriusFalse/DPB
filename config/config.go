@@ -32,7 +32,7 @@ func defaultConfig() *Config {
 		ComfyEnabled:  false,
 		ComfyAddress:  "http://127.0.0.1:8188",
 		SavePath:      "./output",
-		Resolutions:   "512x512\n768x768\n1024x1024\n768x1024\n1024x768\n1216x832\n1344x768",
+		Resolutions:   "Square 1:1#512x512\nSquare HD 1:1#768x768\nSquare XL 1:1#1024x1024\nPortrait 2:3#768x1152\nLandscape 3:2#1152x768\nPortrait 3:4#768x1024\nLandscape 4:3#1024x768\nPortrait Tall 4:7#768x1344\nUltra Wide 7:4#1344x768\nPortrait 9:16#720x1280\nPortrait Wide 13:19#832x1216\nWidescreen 16:9#1280x720\nLandscape Wide 19:13#1216x832",
 	}
 }
 
@@ -97,7 +97,7 @@ func Load(path string) (*Config, error) {
 		cfg.SavePath = "./output"
 	}
 	if cfg.Resolutions == "" {
-		cfg.Resolutions = "512x512\n768x768\n1024x1024\n768x1024\n1024x768\n1216x832\n1344x768"
+		cfg.Resolutions = "Square 1:1#512x512\nSquare HD 1:1#768x768\nSquare XL 1:1#1024x1024\nPortrait 2:3#768x1152\nLandscape 3:2#1152x768\nPortrait 3:4#768x1024\nLandscape 4:3#1024x768\nPortrait Tall 4:7#768x1344\nUltra Wide 7:4#1344x768\nPortrait 9:16#720x1280\nPortrait Wide 13:19#832x1216\nWidescreen 16:9#1280x720\nLandscape Wide 19:13#1216x832"
 	}
 	cfg.SavePath = resolvePath(cfgDir, cfg.SavePath)
 

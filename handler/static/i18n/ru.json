@@ -95,6 +95,7 @@
   "comfy.address": "Адрес ComfyUI",
   "comfy.save_path": "Путь сохранения",
   "comfy.resolutions": "Разрешения (по одному на строку)",
+  "comfy.resolutions_hint": "Формат: Имя#ШиринаxВысота, например Square#512x512",
   "comfy.workflow": "Workflow",
   "comfy.checkpoint": "Модель (CKPT)",
   "comfy.steps": "Шаги (STEPS)",

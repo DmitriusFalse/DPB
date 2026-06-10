@@ -1,4 +1,9 @@
 const BLOCK_IDS = { 'quality': 1, 'sources': 2, 'rating': 3, 'appearance': 4, 'pose': 5, 'scene': 6, 'style': 7 };
+const CATEGORY_COLORS = [
+  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6',
+  '#84cc16', '#d946ef',
+];
 
 function app() {
   return {
@@ -37,6 +42,7 @@ function app() {
 
     async loadConstants() {
       this.tagBlockMap = {};
+      this.tagInfoMap = {};
       try {
         const res = await fetch('/static/constants.json');
         if (!res.ok) { console.error('loadConstants status:', res.status); return; }
@@ -47,13 +53,20 @@ function app() {
           const cat = parts.length >= 2 ? parts[1] : '';
           const blockId = BLOCK_IDS[cat];
           if (!blockId) continue;
+          const subcatKey = group.subcat || cat;
           if (group.tags) {
-            for (const tag of group.tags) this.tagBlockMap[tag] = blockId;
+            for (const tag of group.tags) {
+              this.tagBlockMap[tag] = blockId;
+              this.tagInfoMap[tag] = { category: 'const', subcategory: subcatKey };
+            }
           }
           if (group.subcategories) {
             for (const sub of group.subcategories) {
               if (sub.tags) {
-                for (const tag of sub.tags) this.tagBlockMap[tag] = blockId;
+                for (const tag of sub.tags) {
+                  this.tagBlockMap[tag] = blockId;
+                  this.tagInfoMap[tag] = { category: 'const', subcategory: subcatKey };
+                }
               }
             }
           }
@@ -112,7 +125,9 @@ function app() {
     constOpen: {},
     constSubOpen: {},
     constantTags: [],
+    categoryColor: {},
     tagBlockMap: {},
+    tagInfoMap: {},
     version: '',
 
     // ComfyUI
@@ -140,6 +155,8 @@ function app() {
     _genDataLoaded: false,
     seed: 0,
     seedFixed: false,
+    nodeTitles: {},
+    tagToCategory: {},
 
     // Favorites
     favorites: [],
@@ -173,7 +190,7 @@ function app() {
       this.loadPresets();
       await this.loadTranslations();
       await this.loadConstants();
-      this.updateChipNames();
+      this.assignColors();
       await this.loadPacks();
       document.addEventListener('pwa-installable', () => {
         this.pwaInstallable = true;
@@ -253,6 +270,7 @@ function app() {
         if (!res.ok) { console.error('loadTree status:', res.status); return; }
         this.tree = await res.json();
         this.treeOpen = {};
+        this.assignColors();
       } catch (e) {
         console.error('loadTree:', e);
       }
@@ -273,6 +291,10 @@ function app() {
             const res = await fetch(`/api/tags/tree?pack_id=${this.selectedPackId}&category=${encodeURIComponent(name)}&offset=0&limit=99999`);
             const page = await res.json();
             treeCat._tags = page.tags || [];
+            for (const t of treeCat._tags) {
+              this.tagToCategory[t.tag_name] = name;
+              this.tagInfoMap[t.tag_name] = { category: name, subcategory: '' };
+            }
             this.treeModalProgress = 100;
           } catch (e) {
             console.error('toggleCategory:', e);
@@ -563,12 +585,132 @@ function app() {
       return '';
     },
 
+    selectedCountInCategory(cat) {
+      let count = 0;
+      if (cat.tags) {
+        for (const t of cat.tags) {
+          if (this.posNames[t] || this.negNames[t]) count++;
+        }
+      }
+      if (cat.subcategories) {
+        for (const sub of cat.subcategories) {
+          if (sub.tags) {
+            for (const t of sub.tags) {
+              if (this.posNames[t] || this.negNames[t]) count++;
+            }
+          }
+        }
+      }
+      return count;
+    },
+
+    selectedCountInSub(sub) {
+      let count = 0;
+      if (sub.tags) {
+        for (const t of sub.tags) {
+          if (this.posNames[t] || this.negNames[t]) count++;
+        }
+      }
+      return count;
+    },
+
+    selectedCountInTree(cat) {
+      let count = 0;
+      for (const ch of this.positiveChips) {
+        if (ch.category === cat.name || this.tagToCategory[ch.name] === cat.name) count++;
+        else if (cat._tags && cat._tags.some(t => t.tag_name === ch.name)) count++;
+      }
+      for (const ch of this.negativeChips) {
+        if (ch.category === cat.name || this.tagToCategory[ch.name] === cat.name) count++;
+        else if (cat._tags && cat._tags.some(t => t.tag_name === ch.name)) count++;
+      }
+      return count;
+    },
+
     updateChipNames() {
       const p = {}, n = {};
       for (const c of this.positiveChips) p[c.name] = true;
       for (const c of this.negativeChips) n[c.name] = true;
       this.posNames = p;
       this.negNames = n;
+      const tc = {};
+      for (const c of this.positiveChips) { if (c.category) tc[c.name] = c.category; }
+      for (const c of this.negativeChips) { if (c.category) tc[c.name] = c.category; }
+      this.tagToCategory = tc;
+    },
+
+    assignColors() {
+      const map = {};
+      let i = 0;
+      for (const cat of this.tree) {
+        map[cat.name] = CATEGORY_COLORS[i++ % CATEGORY_COLORS.length];
+      }
+      for (const cat of this.constantTags) {
+        const key = cat.tkey?.split('.').pop() || cat.name;
+        if (!map[key]) {
+          map[key] = CATEGORY_COLORS[i++ % CATEGORY_COLORS.length];
+        }
+      }
+      this.categoryColor = map;
+    },
+
+    getColorForChip(chip) {
+      let key = chip.category === 'const' ? chip.subcategory : chip.category;
+      if (key && key !== 'meta' && this.categoryColor[key]) return this.categoryColor[key];
+      const info = this.tagInfoMap[chip.name];
+      if (info) {
+        key = info.category === 'const' ? info.subcategory : info.category;
+        if (this.categoryColor[key]) return this.categoryColor[key];
+      }
+      return null;
+    },
+
+    getCategoryColor(cat) {
+      const key = cat.tkey?.split('.').pop() || cat.name;
+      return this.categoryColor[key] || null;
+    },
+
+    chipCategoryName(chip) {
+      let catName = '';
+      let isConst = false;
+      if (chip.category === 'const') {
+        catName = chip.subcategory;
+        isConst = true;
+      } else if (chip.category === 'meta' && this.tagInfoMap[chip.name]) {
+        const info = this.tagInfoMap[chip.name];
+        catName = info.subcategory;
+        isConst = info.category === 'const';
+      } else if (chip.category && chip.category !== 'meta') {
+        catName = chip.category;
+      }
+      if (!catName) return '';
+      if (isConst) {
+        const group = this.constantTags.find(g => (g.tkey?.split('.').pop() || g.name) === catName);
+        return group ? this.t(group.tkey || group.name) : catName;
+      }
+      return this.tCat(catName) || catName;
+    },
+
+    enrichChips() {
+      let dirty = false;
+      for (const ch of this.positiveChips) {
+        if (ch.category === 'meta' && this.tagInfoMap[ch.name]) {
+          ch.category = this.tagInfoMap[ch.name].category;
+          ch.subcategory = this.tagInfoMap[ch.name].subcategory;
+          dirty = true;
+        }
+      }
+      for (const ch of this.negativeChips) {
+        if (ch.category === 'meta' && this.tagInfoMap[ch.name]) {
+          ch.category = this.tagInfoMap[ch.name].category;
+          ch.subcategory = this.tagInfoMap[ch.name].subcategory;
+          dirty = true;
+        }
+      }
+      if (dirty) {
+        this.positiveChips = this.positiveChips.slice();
+        this.negativeChips = this.negativeChips.slice();
+      }
     },
 
     // ─── Presets ───
@@ -597,6 +739,7 @@ function app() {
           this.negativeChips.push(ch);
         }
       }
+      this.enrichChips();
       this.updateChipNames();
       this.autoSavePrompt();
     },
@@ -706,6 +849,7 @@ function app() {
         }
       }
       this.drawerOpen = false;
+      this.enrichChips();
       this.updateChipNames();
       this.autoSavePrompt();
     },
@@ -753,11 +897,26 @@ function app() {
         };
         try {
           localStorage.setItem('autosave_prompt', JSON.stringify(data));
+          localStorage.setItem('autosave_chips', JSON.stringify({
+            positiveChips: this.positiveChips,
+            negativeChips: this.negativeChips
+          }));
         } catch (_) {}
       }, 150);
     },
 
     loadAutoSave() {
+      try {
+        const chips = localStorage.getItem('autosave_chips');
+        if (chips) {
+          const data = JSON.parse(chips);
+          if (data.positiveChips?.length || data.negativeChips?.length) {
+            this.positiveChips = data.positiveChips || [];
+            this.negativeChips = data.negativeChips || [];
+            return;
+          }
+        }
+      } catch(_) {}
       try {
         const raw = localStorage.getItem('autosave_prompt');
         if (raw) {
@@ -792,8 +951,11 @@ function app() {
         this.comfyEnabled = c.comfy_enabled;
         this.comfyAddress = c.comfy_address || 'http://127.0.0.1:8188';
         this.savePath = c.save_path || '';
-        this.resolutions = (c.resolutions || '512x512').split('\n').map(s => s.trim()).filter(s => s.length > 0);
-        this.selectedResolution = this.resolutions[0] || '512x512';
+        this.resolutions = (c.resolutions || 'Square 1:1#512x512').split('\n').map(s => s.trim()).filter(s => s.length > 0).map(s => {
+          const parts = s.split('#');
+          return parts.length === 2 ? { name: parts[0], dims: parts[1] } : { name: s, dims: s };
+        });
+        this.selectedResolution = this.resolutions[0]?.dims || '512x512';
       } catch(_) {}
     },
 
@@ -835,8 +997,24 @@ function app() {
       if (this._genDataLoaded) return;
       this._genDataLoaded = true;
       await this.loadWorkflows();
+      await this.loadNodeTitles();
       await this.loadCheckpoints();
       await this.loadSamplers();
+    },
+
+    async loadNodeTitles() {
+      if (!this.selectedWorkflow) return;
+      try {
+        const r = await fetch('/api/comfy/workflows?name=' + encodeURIComponent(this.selectedWorkflow));
+        if (!r.ok) return;
+        const data = await r.json();
+        this.nodeTitles = {};
+        for (const [id, node] of Object.entries(data)) {
+          if (node._meta?.title) {
+            this.nodeTitles[id] = node._meta.title;
+          }
+        }
+      } catch(_) {}
     },
 
     async generate() {
@@ -904,7 +1082,7 @@ function app() {
           const msg = JSON.parse(event.data);
           if (msg.type === 'progress') {
             this.generationProgress = (msg.data.value / msg.data.max) * 100;
-            this.generationStatus = Math.round(this.generationProgress) + '%';
+            this.generationStatus = msg.data.value + '/' + msg.data.max + ' (' + Math.round(this.generationProgress) + '%)';
           } else if (msg.type === 'executed' && msg.data?.output?.images?.length > 0) {
             const img = msg.data.output.images[0];
             const params = new URLSearchParams({
@@ -914,6 +1092,7 @@ function app() {
             });
             this.generationResult = '/api/comfy/image?' + params.toString();
             this.generationProgress = 100;
+            this.generationStatus = this.t('comfy.result') || 'Done';
             fetch('/api/comfy/save-image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -925,7 +1104,8 @@ function app() {
           } else if (msg.type === 'executing' && msg.data?.node === null) {
             ws.close();
           } else if (msg.type === 'executing' && msg.data?.node) {
-            this.generationStatus = msg.data.node + '...';
+            const name = this.nodeTitles[msg.data.node] || 'Node ' + msg.data.node;
+            this.generationStatus = name + '...';
           }
         } catch(_) {}
       };
@@ -951,6 +1131,11 @@ function app() {
       return groups.filter(g => g.length > 0).map(g => g.join(', ')).join(' BREAK ');
     },
 
+    get selectedResolutionText() {
+      const r = this.resolutions.find(x => x.dims === this.selectedResolution);
+      return r ? r.name + ' - ' + r.dims : this.selectedResolution;
+    },
+
     get negativePrompt() {
       return this.negativeChips.map(ch => ch.name).join(', ');
     },
@@ -967,12 +1152,36 @@ function app() {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     },
 
-    loadAll() {
-      this.loadTree();
+    async loadAllTreeTags() {
+      if (!this.selectedPackId || !this.tree.length) return;
+      try {
+        await Promise.all(this.tree.map(cat =>
+          fetch(`/api/tags/tree?pack_id=${this.selectedPackId}&category=${encodeURIComponent(cat.name)}&offset=0&limit=99999`)
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(page => {
+              cat._tags = page.tags || [];
+              for (const t of cat._tags) {
+                this.tagInfoMap[t.tag_name] = { category: cat.name, subcategory: '' };
+                this.tagToCategory[t.tag_name] = cat.name;
+              }
+            })
+            .catch(e => console.error('loadTreeTags:', cat.name, e))
+        ));
+        this.enrichChips();
+        this.updateChipNames();
+      } catch(_) {}
+    },
+
+    async loadAll() {
+      await this.loadTree();
+      this.assignColors();
       this.loadFavorites();
       this.loadHistory();
       this.loadFavoritePrompts();
       this.loadAutoSave();
+      this.enrichChips();
+      this.updateChipNames();
+      this.loadAllTreeTags();
     }
   };
 }

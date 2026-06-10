@@ -362,6 +362,22 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
   cursor: pointer; padding: 0; line-height: 1;
   transition: background 0.15s;
 }
+.tag-color-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0px,
+    transparent 2px,
+    var(--dot-color) 2px,
+    var(--dot-color) 4px
+  );
+}
+.count-selected { color: var(--c-yellow-600); font-weight: 700; }
+.dark .count-selected { color: var(--c-yellow-500); }
 .tag-pill .btn:hover { background: rgba(128,128,128,0.15); }
 .tag-pill .btn-fav { color: var(--c-yellow-500); }
 .tag-pill .btn-pos { color: var(--c-green-600); }

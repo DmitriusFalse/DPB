@@ -167,7 +167,11 @@
           <template x-for="cat in constantTags" :key="cat.name">
           <div>
             <button @click="constOpen[cat.name] = !constOpen[cat.name]" class="cursor-pointer w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wide bg-blue-50 dark:bg-dark-500 hover:bg-blue-100 dark:hover:bg-dark-600 text-gray-900 dark:text-dark-100">
-              <span x-text="t(cat.tkey || cat.name)"></span>
+              <span class="flex items-center gap-1.5">
+                <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
+                <span x-text="t(cat.tkey || cat.name)"></span>
+                <span x-show="selectedCountInCategory(cat) > 0" class="ml-1 count-selected" x-text="'(' + selectedCountInCategory(cat) + ')'"></span>
+              </span>
               <span x-text="constOpen[cat.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
             </button>
             <div x-show="constOpen[cat.name]" class="px-3 pb-1">
@@ -186,7 +190,11 @@
                 <template x-for="sub in cat.subcategories" :key="sub.name">
                   <div>
                     <button @click="constSubOpen[cat.name+'_'+sub.name] = !constSubOpen[cat.name+'_'+sub.name]" class="cursor-pointer w-full flex items-center justify-between px-2 py-0.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-dark-600 text-gray-500 dark:text-dark-400">
-                      <span x-text="sub.name"></span>
+                      <span class="flex items-center gap-1">
+                        <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
+                        <span x-text="sub.name"></span>
+                        <span x-show="selectedCountInSub(sub) > 0" class="ml-1 count-selected" x-text="'(' + selectedCountInSub(sub) + ')'"></span>
+                      </span>
                       <span x-text="constSubOpen[cat.name+'_'+sub.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
                     </button>
                     <div x-show="constSubOpen[cat.name+'_'+sub.name]" class="flex flex-wrap gap-1 px-2 py-1">
@@ -210,8 +218,9 @@
           <div>
             <button @click="toggleCategory(cat)" class="cursor-pointer w-full flex items-center justify-between px-3 py-2 text-sm font-bold uppercase tracking-wide bg-gray-200 dark:bg-dark-600 hover:bg-gray-300 dark:hover:bg-dark-500 text-gray-900 dark:text-dark-100">
               <div class="flex items-center gap-2 min-w-0">
+                <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                 <span x-text="tCat(cat.name)"></span>
-                <span class="text-[10px] text-gray-400 dark:text-dark-400 font-normal" x-text="'('+cat.count+')'"></span>
+                <span class="text-[10px] font-normal" :class="selectedCountInTree(cat) > 0 ? 'count-selected' : 'text-gray-400 dark:text-dark-400'"><span x-show="selectedCountInTree(cat) > 0" x-text="selectedCountInTree(cat) + '/'"></span><span x-text="'('+cat.count+')'"></span></span>
               </div>
               <span x-text="treeOpen[cat.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
             </button>
@@ -261,7 +270,9 @@
                         @click="removeChip('positive', ch.name)"
                         @mouseenter="showTagImage($event, ch.name, ch.category === 'const')"
                         @mouseleave="hideTagImage()"
-                        :data-chip-name="ch.name">
+                        :data-chip-name="ch.name"
+                        :title="chipCategoryName(ch)">
+                    <span x-show="getColorForChip(ch)" class="tag-color-dot" :style="{ '--dot-color': getColorForChip(ch) }"></span>
                     <span x-text="ch.name" class="max-w-48 truncate"></span>
                     <span class="text-xs opacity-60 hover:opacity-100">x</span>
                   </span>
@@ -290,7 +301,9 @@
                     @click="removeChip('negative', ch.name)"
                     @mouseenter="showTagImage($event, ch.name, ch.category === 'const')"
                     @mouseleave="hideTagImage()"
-                    :data-chip-name="ch.name">
+                    :data-chip-name="ch.name"
+                    :title="chipCategoryName(ch)">
+                    <span x-show="getColorForChip(ch)" class="tag-color-dot" :style="{ '--dot-color': getColorForChip(ch) }"></span>
                 <span x-text="ch.name" class="max-w-48 truncate"></span>
                 <span class="text-xs opacity-60 hover:opacity-100">x</span>
               </span>
@@ -372,12 +385,20 @@
             <div x-show="activeTab === 'generation'">
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.workflow')">Workflow</span>
-                <select x-model="selectedWorkflow" class="border rounded px-2 py-1 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
-                  <option value="" disabled x-text="t('comfy.no_workflow')">Нет воркфлоу</option>
-                  <template x-for="wf in workflows" :key="wf.name">
-                    <option :value="wf.name" x-text="wf.label"></option>
-                  </template>
-                </select>
+                <div class="relative" style="flex:1;max-width:300px" x-data="{ dpOpen: false }">
+                  <button @click="dpOpen = !dpOpen" @click.outside="dpOpen = false" class="w-full flex items-center justify-between gap-1 px-2 py-1 text-sm rounded-lg bg-white dark:bg-dark-600 border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors" :class="{ 'rounded-b-none': dpOpen }">
+                    <span class="truncate text-left" x-text="selectedWorkflow || t('comfy.no_workflow')"></span>
+                    <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
+                    <template x-for="wf in workflows" :key="wf.name">
+                      <button @click="selectedWorkflow = wf.name; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedWorkflow === wf.name ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                        <span x-text="wf.label"></span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
               </div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.save_path')">Путь сохранения</span>
@@ -385,11 +406,20 @@
               </div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.checkpoint')">Модель</span>
-                <select x-model="selectedCheckpoint" class="border rounded px-2 py-1 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
-                  <template x-for="ckpt in checkpoints" :key="ckpt">
-                    <option :value="ckpt" x-text="ckpt"></option>
-                  </template>
-                </select>
+                <div class="relative" style="flex:1;max-width:300px" x-data="{ dpOpen: false }">
+                  <button @click="dpOpen = !dpOpen" @click.outside="dpOpen = false" class="w-full flex items-center justify-between gap-1 px-2 py-1 text-sm rounded-lg bg-white dark:bg-dark-600 border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors" :class="{ 'rounded-b-none': dpOpen }">
+                    <span class="truncate text-left" x-text="selectedCheckpoint || t('comfy.no_workflow')"></span>
+                    <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
+                    <template x-for="ckpt in checkpoints" :key="ckpt">
+                      <button @click="selectedCheckpoint = ckpt; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedCheckpoint === ckpt ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                        <span x-text="ckpt"></span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
                 <span class="gen-refresh" @click="loadCheckpoints()" :title="t('comfy.refresh')">⟳</span>
               </div>
               <div class="gen-row">
@@ -404,27 +434,54 @@
               </div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.sampler')">Семплер</span>
-                <select x-model="selectedSampler" class="border rounded px-2 py-1 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
-                  <template x-for="s in samplers" :key="s">
-                    <option :value="s" x-text="s"></option>
-                  </template>
-                </select>
+                <div class="relative" style="flex:1;max-width:300px" x-data="{ dpOpen: false }">
+                  <button @click="dpOpen = !dpOpen" @click.outside="dpOpen = false" class="w-full flex items-center justify-between gap-1 px-2 py-1 text-sm rounded-lg bg-white dark:bg-dark-600 border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors" :class="{ 'rounded-b-none': dpOpen }">
+                    <span class="truncate text-left" x-text="selectedSampler"></span>
+                    <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
+                    <template x-for="s in samplers" :key="s">
+                      <button @click="selectedSampler = s; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedSampler === s ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                        <span x-text="s"></span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
               </div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.scheduler')">Шедулер</span>
-                <select x-model="selectedScheduler" class="border rounded px-2 py-1 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
-                  <template x-for="s in schedulers" :key="s">
-                    <option :value="s" x-text="s"></option>
-                  </template>
-                </select>
+                <div class="relative" style="flex:1;max-width:300px" x-data="{ dpOpen: false }">
+                  <button @click="dpOpen = !dpOpen" @click.outside="dpOpen = false" class="w-full flex items-center justify-between gap-1 px-2 py-1 text-sm rounded-lg bg-white dark:bg-dark-600 border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors" :class="{ 'rounded-b-none': dpOpen }">
+                    <span class="truncate text-left" x-text="selectedScheduler"></span>
+                    <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
+                    <template x-for="s in schedulers" :key="s">
+                      <button @click="selectedScheduler = s; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedScheduler === s ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                        <span x-text="s"></span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
               </div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.resolution')">Разрешение</span>
-                <select x-model="selectedResolution" class="border rounded px-2 py-1 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
-                  <template x-for="res in resolutions" :key="res">
-                    <option :value="res" x-text="res"></option>
-                  </template>
-                </select>
+                <div class="relative" style="flex:1;max-width:300px" x-data="{ dpOpen: false }">
+                  <button @click="dpOpen = !dpOpen" @click.outside="dpOpen = false" class="w-full flex items-center justify-between gap-1 px-2 py-1 text-sm rounded-lg bg-white dark:bg-dark-600 border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors" :class="{ 'rounded-b-none': dpOpen }">
+                    <span class="truncate text-left" x-text="selectedResolutionText"></span>
+                    <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
+                    <template x-for="res in resolutions" :key="res.dims">
+                      <button @click="selectedResolution = res.dims; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedResolution === res.dims ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                        <span x-text="res.name + ' - ' + res.dims"></span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
               </div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.seed')">Seed</span>
