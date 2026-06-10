@@ -38,6 +38,16 @@ func handleConfig(cfg *config.Config, configPath string) http.HandlerFunc {
 			if updated.StaticImgPath == "" {
 				updated.StaticImgPath = cfg.StaticImgPath
 			}
+			if updated.ComfyAddress == "" {
+				updated.ComfyAddress = "http://127.0.0.1:8188"
+			}
+			if updated.SavePath == "" {
+				updated.SavePath = "./output"
+			}
+			if updated.Resolutions == "" {
+				updated.Resolutions = cfg.Resolutions
+			}
+			updated.WorkflowsPath = cfg.WorkflowsPath
 
 			if err := updated.Save(configPath); err != nil {
 				jsonError(w, "Save failed: "+err.Error(), http.StatusInternalServerError)

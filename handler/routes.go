@@ -3,6 +3,7 @@ package handler
 import (
 	"database/sql"
 	"net/http"
+	"path/filepath"
 
 	"danbooru-prompt-builder/config"
 	"danbooru-prompt-builder/database"
@@ -11,6 +12,7 @@ import (
 
 func RegisterRoutes(mux *http.ServeMux, db *sql.DB, cfg *config.Config, syncSvc *sync.Service, configPath string) {
 	repo := database.NewRepo(db)
+	cfg.WorkflowsPath = filepath.Join(filepath.Dir(configPath), "Workflows")
 
 	mux.Handle("/static/", http.StripPrefix("/static/", StaticHandler()))
 
@@ -36,4 +38,10 @@ func RegisterRoutes(mux *http.ServeMux, db *sql.DB, cfg *config.Config, syncSvc 
 	mux.HandleFunc("/api/static/image", api(handleStaticImage(cfg)))
 	mux.HandleFunc("/api/tags/image", api(handleTagImage(repo)))
 	mux.HandleFunc("/api/prompts", api(handlePrompts(repo)))
+	mux.HandleFunc("/api/comfy/workflows", api(handleComfyWorkflows(cfg)))
+	mux.HandleFunc("/api/comfy/generate", api(handleComfyGenerate(cfg)))
+	mux.HandleFunc("/api/comfy/image", api(handleComfyImage(cfg)))
+	mux.HandleFunc("/api/comfy/object_info/", api(handleComfyObjectInfo(cfg)))
+	mux.HandleFunc("/api/comfy/save-image", api(handleComfySaveImage(cfg)))
+	mux.HandleFunc("/api/comfy/ws", api(handleComfyWS(cfg)))
 }

@@ -453,6 +453,165 @@ button { font-family: inherit; cursor: pointer; color: inherit; background: none
   color: #f43f5e;
 }
 
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--c-border);
+  margin-bottom: 12px;
+}
+.tab-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--c-text-400);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+}
+.tab-btn:hover {
+  color: var(--c-text);
+}
+.tab-btn.active {
+  color: var(--c-blue-600);
+  border-bottom-color: var(--c-blue-600);
+}
+.dark .tab-btn.active {
+  color: var(--c-blue-400);
+  border-bottom-color: var(--c-blue-400);
+}
+
+/* Progress bar */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--c-bg-200);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--c-blue-600);
+  border-radius: 4px;
+  transition: width 0.2s ease;
+}
+.dark .progress-bar-fill {
+  background: var(--c-blue-400);
+}
+
+/* Generation controls */
+.gen-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-text-500);
+  min-width: 100px;
+}
+.gen-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.gen-row .gen-label {
+  min-width: 100px;
+}
+.gen-row input[type="range"] {
+  flex: 1;
+  max-width: 200px;
+}
+.gen-row input[type="number"] {
+  width: 60px;
+  text-align: center;
+}
+.gen-row select {
+  flex: 1;
+  max-width: 300px;
+}
+.gen-refresh {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: var(--c-bg-100);
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 1px solid var(--c-border);
+  font-size: 14px;
+}
+.gen-refresh:hover {
+  background: var(--c-bg-200);
+}
+.dark .gen-refresh {
+  background: var(--c-bg-200);
+  border-color: var(--c-border-300);
+}
+.dark .gen-refresh:hover {
+  background: var(--c-bg-300);
+}
+
+/* Collapse toggle */
+.collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--c-text-400);
+  user-select: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.collapse-toggle:hover {
+  background: var(--c-bg-100);
+}
+.dark .collapse-toggle:hover {
+  background: var(--c-bg-200);
+}
+
+/* Generation result image */
+.gen-result {
+  margin-top: 12px;
+  text-align: center;
+}
+.gen-result img {
+  max-width: 100%;
+  max-height: 512px;
+  border-radius: 8px;
+  border: 1px solid var(--c-border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Gen button states */
+.btn-gen {
+  padding: 8px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-gen-ready {
+  background: var(--c-green-600);
+  color: #fff;
+  border: none;
+}
+.btn-gen-ready:hover {
+  background: var(--c-green-700);
+}
+.btn-gen-busy {
+  background: var(--c-text-400);
+  color: #fff;
+  border: none;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* Block chip groups */
 .block-section {
   margin-bottom: 6px;
