@@ -95,6 +95,7 @@
   "comfy.address": "ComfyUI Address",
   "comfy.save_path": "Save Path",
   "comfy.resolutions": "Resolutions (one per line)",
+  "comfy.resolutions_hint": "Format: Name#WIDTHxHEIGHT, e.g. Square#512x512",
   "comfy.workflow": "Workflow",
   "comfy.checkpoint": "Model (CKPT)",
   "comfy.steps": "Steps (STEPS)",
