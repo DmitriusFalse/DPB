@@ -14,6 +14,11 @@ type Config struct {
 	LogLevel      string `json:"log_level"`
 	LogsDir       string `json:"logs_dir"`
 	StaticImgPath string `json:"static_img_path"`
+	ComfyEnabled  bool   `json:"comfy_enabled"`
+	ComfyAddress  string `json:"comfy_address"`
+	SavePath      string `json:"save_path"`
+	Resolutions   string `json:"resolutions"`
+	WorkflowsPath string `json:"-"`
 }
 
 func defaultConfig() *Config {
@@ -24,6 +29,10 @@ func defaultConfig() *Config {
 		LogsDir:       "./logs",
 		LogLevel:      "error",
 		StaticImgPath: "./img",
+		ComfyEnabled:  false,
+		ComfyAddress:  "http://127.0.0.1:8188",
+		SavePath:      "./output",
+		Resolutions:   "512x512\n768x768\n1024x1024\n768x1024\n1024x768\n1216x832\n1344x768",
 	}
 }
 
@@ -42,6 +51,7 @@ func Load(path string) (*Config, error) {
 			cfg.DBPath = resolvePath(cfgDir, cfg.DBPath)
 			cfg.LogsDir = resolvePath(cfgDir, cfg.LogsDir)
 			cfg.StaticImgPath = resolvePath(cfgDir, cfg.StaticImgPath)
+					cfg.SavePath = resolvePath(cfgDir, cfg.SavePath)
 			if err := cfg.Save(absPath); err != nil {
 				return nil, fmt.Errorf("create default config: %w", err)
 			}
@@ -79,7 +89,17 @@ func Load(path string) (*Config, error) {
 	cfg.TagsPath = resolvePath(cfgDir, cfg.TagsPath)
 	cfg.DBPath = resolvePath(cfgDir, cfg.DBPath)
 	cfg.LogsDir = resolvePath(cfgDir, cfg.LogsDir)
-	cfg.StaticImgPath = resolvePath(cfgDir, cfg.StaticImgPath)
+		cfg.StaticImgPath = resolvePath(cfgDir, cfg.StaticImgPath)
+	if cfg.ComfyAddress == "" {
+		cfg.ComfyAddress = "http://127.0.0.1:8188"
+	}
+	if cfg.SavePath == "" {
+		cfg.SavePath = "./output"
+	}
+	if cfg.Resolutions == "" {
+		cfg.Resolutions = "512x512\n768x768\n1024x1024\n768x1024\n1024x768\n1216x832\n1344x768"
+	}
+	cfg.SavePath = resolvePath(cfgDir, cfg.SavePath)
 
 	return cfg, nil
 }

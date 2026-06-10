@@ -86,6 +86,12 @@ if exist "handler\img" (
     xcopy /E /I /Q "handler\img" "%BUILD_DIR%\img" >nul
 )
 
+:: Copy workflows alongside the binary
+if exist "Workflows" (
+    if exist "%BUILD_DIR%\Workflows" rd /s /q "%BUILD_DIR%\Workflows"
+    xcopy /E /I /Q "Workflows" "%BUILD_DIR%\Workflows" >nul
+)
+
 :: Clean up junk files left after tests
 if exist "%BUILD_DIR%\*.log" del "%BUILD_DIR%\*.log"
 

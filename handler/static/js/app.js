@@ -115,6 +115,32 @@ function app() {
     tagBlockMap: {},
     version: '',
 
+    // ComfyUI
+    comfyEnabled: false,
+    comfyAddress: 'http://127.0.0.1:8188',
+    savePath: '',
+    resolutions: [],
+    activeTab: 'tags',
+    promptExpanded: false,
+    workflows: [],
+    selectedWorkflow: '',
+    checkpoints: [],
+    selectedCheckpoint: '',
+    steps: 20,
+    cfg: 7,
+    samplers: [],
+    selectedSampler: 'euler',
+    schedulers: [],
+    selectedScheduler: 'normal',
+    selectedResolution: '512x512',
+    generating: false,
+    generationProgress: 0,
+    generationStatus: '',
+    generationResult: null,
+    _genDataLoaded: false,
+    seed: 0,
+    seedFixed: false,
+
     // Favorites
     favorites: [],
     favOpen: false,
@@ -156,6 +182,7 @@ function app() {
         const r = await fetch('/api/version');
         if (r.ok) { const d = await r.json(); this.version = d.version; }
       } catch(e) {}
+      await this.loadComfyConfig();
     },
 
     // ─── Packs ───
@@ -753,6 +780,164 @@ function app() {
           }
         }
       } catch (_) {}
+    },
+
+    // ─── ComfyUI ───
+
+    async loadComfyConfig() {
+      try {
+        const r = await fetch('/api/config');
+        if (!r.ok) return;
+        const c = await r.json();
+        this.comfyEnabled = c.comfy_enabled;
+        this.comfyAddress = c.comfy_address || 'http://127.0.0.1:8188';
+        this.savePath = c.save_path || '';
+        this.resolutions = (c.resolutions || '512x512').split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        this.selectedResolution = this.resolutions[0] || '512x512';
+      } catch(_) {}
+    },
+
+    async loadWorkflows() {
+      try {
+        const r = await fetch('/api/comfy/workflows');
+        if (!r.ok) return;
+        this.workflows = await r.json();
+        if (this.workflows.length > 0) this.selectedWorkflow = this.workflows[0].name;
+      } catch(_) {}
+    },
+
+    async loadCheckpoints() {
+      try {
+        const r = await fetch('/api/comfy/object_info/CheckpointLoaderSimple');
+        if (!r.ok) return;
+        const data = await r.json();
+        const ckpts = data?.CheckpointLoaderSimple?.input?.required?.ckpt_name?.[0];
+        if (ckpts) {
+          this.checkpoints = ckpts;
+          if (ckpts.length > 0) this.selectedCheckpoint = ckpts[0];
+        }
+      } catch(_) {}
+    },
+
+    async loadSamplers() {
+      try {
+        const r = await fetch('/api/comfy/object_info/KSampler');
+        if (!r.ok) return;
+        const data = await r.json();
+        const samplerList = data?.KSampler?.input?.required?.sampler_name?.[0];
+        if (samplerList) { this.samplers = samplerList; this.selectedSampler = samplerList[0] || 'euler'; }
+        const schedList = data?.KSampler?.input?.required?.scheduler?.[0];
+        if (schedList) { this.schedulers = schedList; this.selectedScheduler = schedList[0] || 'normal'; }
+      } catch(_) {}
+    },
+
+    async loadGenerationData() {
+      if (this._genDataLoaded) return;
+      this._genDataLoaded = true;
+      await this.loadWorkflows();
+      await this.loadCheckpoints();
+      await this.loadSamplers();
+    },
+
+    async generate() {
+      if (this.generating) return;
+      if (!this.selectedWorkflow) { this.generationStatus = this.t('comfy.no_workflow'); return; }
+      this.generating = true;
+      this.generationProgress = 0;
+      this.generationStatus = '';
+      this.generationResult = null;
+      if (!this.seedFixed) {
+        this.seed = Math.floor(Math.random() * 2147483647);
+      }
+
+      const clientId = crypto.randomUUID();
+      const parts = this.selectedResolution.split('x');
+      const width = parts[0];
+      const height = parts[1];
+
+      const wsUrl = 'ws://' + window.location.host + '/api/comfy/ws?clientId=' + clientId;
+      let ws;
+      try { ws = new WebSocket(wsUrl); } catch (e) {
+        this.generationStatus = this.t('comfy.error') + ': WebSocket ' + e.message;
+        this.generating = false;
+        return;
+      }
+
+      ws.onopen = () => {
+        fetch('/api/comfy/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: clientId,
+            workflow: this.selectedWorkflow,
+            macros: {
+              STEPS: String(this.steps),
+              CFG: String(this.cfg),
+              SAMPLER_NAME: this.selectedSampler,
+              SCHEDULER: this.selectedScheduler,
+              CKPT: this.selectedCheckpoint,
+              SEED: String(this.seed),
+              WIDTH: width,
+              HEIGHT: height,
+              PROMPT_POSITIVE: this.positivePrompt,
+              PROMPT_NEGATIVE: this.negativePrompt
+            }
+          })
+        }).then(r => {
+          if (!r.ok) {
+            r.json().then(d => {
+              this.generationStatus = this.t('comfy.error') + ': ' + (d.error || r.status);
+              ws.close();
+            }).catch(() => {
+              this.generationStatus = this.t('comfy.error') + ': ' + r.status;
+              ws.close();
+            });
+          }
+        }).catch(e => {
+          this.generationStatus = this.t('comfy.error') + ': ' + e.message;
+          ws.close();
+        });
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'progress') {
+            this.generationProgress = (msg.data.value / msg.data.max) * 100;
+            this.generationStatus = Math.round(this.generationProgress) + '%';
+          } else if (msg.type === 'executed' && msg.data?.output?.images?.length > 0) {
+            const img = msg.data.output.images[0];
+            const params = new URLSearchParams({
+              filename: img.filename,
+              subfolder: img.subfolder || '',
+              type: img.type || 'output'
+            });
+            this.generationResult = '/api/comfy/image?' + params.toString();
+            this.generationProgress = 100;
+            fetch('/api/comfy/save-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ filename: img.filename, subfolder: img.subfolder || '', type: img.type || 'output' })
+            }).catch(() => {});
+          } else if (msg.type === 'execution_error') {
+            this.generationStatus = this.t('comfy.error') + ': ' + (msg.data?.exception_message || 'unknown');
+            ws.close();
+          } else if (msg.type === 'executing' && msg.data?.node === null) {
+            ws.close();
+          } else if (msg.type === 'executing' && msg.data?.node) {
+            this.generationStatus = msg.data.node + '...';
+          }
+        } catch(_) {}
+      };
+
+      ws.onerror = () => {
+        this.generationStatus = this.t('comfy.error') + ': WebSocket';
+        this.generating = false;
+      };
+
+      ws.onclose = () => {
+        this.generating = false;
+      };
     },
 
     // ─── Computed ───

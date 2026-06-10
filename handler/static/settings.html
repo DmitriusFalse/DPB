@@ -98,10 +98,6 @@
           </tbody>
         </table>
       </div>
-      <div class="flex items-center gap-3 mt-3">
-        <button @click="saveConfig()" class="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700" x-text="t('settings.save')">Сохранить</button>
-        <span x-show="saveMsg" x-text="saveMsg" class="text-sm" :class="saveOk ? 'text-green-600' : 'text-red-600'"></span>
-      </div>
     </section>
 
     <!-- Pack Management -->
@@ -135,6 +131,47 @@
       <div x-show="packs.length === 0" class="text-center py-8 text-gray-400" x-text="t('packs.empty')">Нет паков</div>
     </section>
 
+    <!-- ComfyUI Settings -->
+    <section>
+      <h2 class="text-lg font-semibold mb-3">ComfyUI</h2>
+      <div class="border border-gray-200 dark:border-dark-600 rounded-lg overflow-hidden">
+        <table class="w-full border-collapse text-sm">
+          <tbody>
+            <tr class="border-b border-gray-100 dark:border-dark-700">
+              <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('comfy.enable')">Включить генерацию</td>
+              <td class="px-4 py-2.5">
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" x-model="cfg.comfy_enabled" class="w-4 h-4">
+                </label>
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 dark:border-dark-700">
+              <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('comfy.address')">Адрес ComfyUI</td>
+              <td class="px-4 py-2.5">
+                <input type="text" x-model="cfg.comfy_address" placeholder="http://127.0.0.1:8188" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+              </td>
+            </tr>
+            <tr class="border-b border-gray-100 dark:border-dark-700">
+              <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium" x-text="t('comfy.save_path')">Путь сохранения</td>
+              <td class="px-4 py-2.5">
+                <input type="text" x-model="cfg.save_path" placeholder="./output" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2.5 text-gray-500 dark:text-dark-400 font-medium align-top" x-text="t('comfy.resolutions')">Разрешения</td>
+              <td class="px-4 py-2.5">
+                <textarea x-model="cfg.resolutions" rows="5" class="w-full border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-y" placeholder="512x512"></textarea>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="flex items-center gap-3 mt-3">
+      <button @click="saveConfig()" class="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700" x-text="t('settings.save')">Сохранить</button>
+      <span x-show="saveMsg" x-text="saveMsg" class="text-sm" :class="saveOk ? 'text-green-600' : 'text-red-600'"></span>
+    </div>
   </main>
 
   <script>
