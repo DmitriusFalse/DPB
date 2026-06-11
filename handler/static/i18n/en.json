@@ -40,6 +40,7 @@
   "tag.pos": "Positive",
   "tag.neg": "Negative",
 
+  "workspace.prompts": "Prompts",
   "workspace.positive": "Positive tags",
   "workspace.negative": "Negative tags",
 
@@ -51,10 +52,10 @@
   "prompt.negative": "Negative",
   "prompt.copy": "📋",
 
-  "actions.save": "💾 Save",
   "actions.clear": "🗑 Clear",
-  "actions.clear_confirm": "Clear all chips?",
+  "actions.clear_tags": "Clear tags",
   "actions.history": "📂 History",
+  "actions.delete": "Delete",
   "actions.cancel": "Cancel",
 
   "images.title": "Tag images",
@@ -68,9 +69,6 @@
   "drawer.fav.tags": "Favorite tags",
   "drawer.fav.prompts": "Favorite prompts",
 
-  "modal.save.title": "Save prompt",
-  "modal.save.placeholder": "Prompt name",
-  "modal.save.confirm": "Save",
   "modal.loading.title": "Loading tags...",
 
   "toast.copied": "Copied",
@@ -111,13 +109,20 @@
   "comfy.status": "Status",
   "comfy.result": "Result",
   "comfy.seed": "Seed",
-  "comfy.seed_fix": "Fix",
+  "comfy.seed_fix": "Fixed Seed",
+  "comfy.group_main": "Main",
+  "comfy.group_sampling": "Sampling",
+  "comfy.group_extra": "Extra",
   "tab.tags": "Tag Images",
   "tab.generation": "Generation",
   "prompt.collapse": "Collapse",
   "prompt.expand": "Expand",
   "settings.yes": "Yes",
   "settings.no": "No",
+  "preview.title": "Past Generations",
+  "preview.placeholder": "Click Generate",
+  "preview.viewer.close": "Close",
+
   "donate.title": "This simple app was made just for fun. Want to support the author? Toss a coin on Boosty",
   "donate.short1": "Toss a coin",
   "donate.short2": "on Boosty"

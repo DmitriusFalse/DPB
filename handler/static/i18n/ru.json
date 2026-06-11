@@ -40,6 +40,7 @@
   "tag.pos": "Позитив",
   "tag.neg": "Негатив",
 
+  "workspace.prompts": "Промпты",
   "workspace.positive": "Позитивные теги",
   "workspace.negative": "Негативные теги",
 
@@ -51,10 +52,10 @@
   "prompt.negative": "Негативный",
   "prompt.copy": "📋",
 
-  "actions.save": "💾 Сохранить",
   "actions.clear": "🗑 Очистить",
-  "actions.clear_confirm": "Очистить все чипы?",
+  "actions.clear_tags": "Очистить теги",
   "actions.history": "📂 История",
+  "actions.delete": "Удалить",
   "actions.cancel": "Отмена",
 
   "images.title": "Изображения тегов",
@@ -68,9 +69,6 @@
   "drawer.fav.tags": "Избранные теги",
   "drawer.fav.prompts": "Избранные промпты",
 
-  "modal.save.title": "Сохранить промпт",
-  "modal.save.placeholder": "Название промпта",
-  "modal.save.confirm": "Сохранить",
   "modal.loading.title": "Загрузка тегов...",
 
   "toast.copied": "Скопировано",
@@ -111,13 +109,20 @@
   "comfy.status": "Статус",
   "comfy.result": "Результат",
   "comfy.seed": "Сид",
-  "comfy.seed_fix": "Фикс",
+  "comfy.seed_fix": "Фиксированный Seed",
+  "comfy.group_main": "Основные",
+  "comfy.group_sampling": "Сэмплинг",
+  "comfy.group_extra": "Дополнительно",
   "tab.tags": "Изображения тегов",
   "tab.generation": "Генерация",
   "prompt.collapse": "Свернуть",
   "prompt.expand": "Развернуть",
   "settings.yes": "Да",
   "settings.no": "Нет",
+  "preview.title": "Прошлые генерации",
+  "preview.placeholder": "Нажмите Сгенерировать",
+  "preview.viewer.close": "Закрыть",
+
   "donate.title": "Это простое приложение создано в удовольствие. Хотите поддержать автора? Подкинуть копейку на Boosty",
   "donate.short1": "Подкинуть копейку",
   "donate.short2": "на Boosty"

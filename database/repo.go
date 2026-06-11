@@ -425,16 +425,16 @@ func (r *Repo) IsFavorite(packID int, tagName string) (bool, error) {
 
 // ─── Saved Prompts ───
 
-func (r *Repo) SavePrompt(name, positiveText, negativeText string, isFavorite bool) (*SavedPrompt, error) {
+func (r *Repo) SavePrompt(name, positiveText, negativeText string, isFavorite bool, genData string) (*SavedPrompt, error) {
 	fav := 0
 	if isFavorite {
 		fav = 1
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	res, err := r.db.Exec(`
-		INSERT INTO saved_prompts (name, positive_text, negative_text, is_favorite, created_at)
-		VALUES (?, ?, ?, ?, ?)
-	`, name, positiveText, negativeText, fav, now)
+		INSERT INTO saved_prompts (name, positive_text, negative_text, is_favorite, created_at, gen_data)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, name, positiveText, negativeText, fav, now, genData)
 	if err != nil {
 		return nil, err
 	}
@@ -446,6 +446,7 @@ func (r *Repo) SavePrompt(name, positiveText, negativeText string, isFavorite bo
 		NegativeText: negativeText,
 		IsFavorite:   isFavorite,
 		CreatedAt:    now,
+		GenData:      genData,
 	}, nil
 }
 
@@ -454,7 +455,7 @@ func (r *Repo) GetHistory(limit int) ([]SavedPrompt, error) {
 		limit = 50
 	}
 	rows, err := r.db.Query(`
-		SELECT id, name, positive_text, negative_text, is_favorite, created_at
+		SELECT id, name, positive_text, negative_text, is_favorite, created_at, gen_data
 		FROM saved_prompts
 		WHERE is_favorite = 0
 		ORDER BY created_at DESC
@@ -469,7 +470,7 @@ func (r *Repo) GetHistory(limit int) ([]SavedPrompt, error) {
 	for rows.Next() {
 		var p SavedPrompt
 		var fav int
-		if err := rows.Scan(&p.ID, &p.Name, &p.PositiveText, &p.NegativeText, &fav, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.PositiveText, &p.NegativeText, &fav, &p.CreatedAt, &p.GenData); err != nil {
 			return nil, err
 		}
 		p.IsFavorite = fav == 1
@@ -480,7 +481,7 @@ func (r *Repo) GetHistory(limit int) ([]SavedPrompt, error) {
 
 func (r *Repo) GetFavoritesPrompts() ([]SavedPrompt, error) {
 	rows, err := r.db.Query(`
-		SELECT id, name, positive_text, negative_text, is_favorite, created_at
+		SELECT id, name, positive_text, negative_text, is_favorite, created_at, gen_data
 		FROM saved_prompts
 		WHERE is_favorite = 1
 		ORDER BY created_at DESC
@@ -494,7 +495,7 @@ func (r *Repo) GetFavoritesPrompts() ([]SavedPrompt, error) {
 	for rows.Next() {
 		var p SavedPrompt
 		var fav int
-		if err := rows.Scan(&p.ID, &p.Name, &p.PositiveText, &p.NegativeText, &fav, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.PositiveText, &p.NegativeText, &fav, &p.CreatedAt, &p.GenData); err != nil {
 			return nil, err
 		}
 		p.IsFavorite = fav == 1

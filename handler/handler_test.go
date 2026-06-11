@@ -548,8 +548,8 @@ func TestPrompts_GetHistory(t *testing.T) {
 	env := setupTest(t)
 	defer env.close()
 
-	env.repo.SavePrompt("", "t1", "n1", false)
-	env.repo.SavePrompt("", "t2", "n2", false)
+	env.repo.SavePrompt("", "t1", "n1", false, "")
+	env.repo.SavePrompt("", "t2", "n2", false, "")
 
 	req := httptest.NewRequest("GET", "/api/prompts?favorites=0", nil)
 	w := httptest.NewRecorder()
@@ -570,8 +570,8 @@ func TestPrompts_GetFavorites(t *testing.T) {
 	env := setupTest(t)
 	defer env.close()
 
-	env.repo.SavePrompt("fav", "t1", "n1", true)
-	env.repo.SavePrompt("hist", "t2", "n2", false)
+	env.repo.SavePrompt("fav", "t1", "n1", true, "")
+	env.repo.SavePrompt("hist", "t2", "n2", false, "")
 
 	req := httptest.NewRequest("GET", "/api/prompts?favorites=1", nil)
 	w := httptest.NewRecorder()
@@ -591,7 +591,7 @@ func TestPrompts_Delete(t *testing.T) {
 	env := setupTest(t)
 	defer env.close()
 
-	p, _ := env.repo.SavePrompt("test", "t", "n", false)
+	p, _ := env.repo.SavePrompt("test", "t", "n", false, "")
 
 	req := httptest.NewRequest("DELETE", "/api/prompts?id=1", nil)
 	w := httptest.NewRecorder()
