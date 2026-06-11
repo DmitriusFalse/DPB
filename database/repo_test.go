@@ -304,7 +304,7 @@ func TestPrompts_SaveAndGet(t *testing.T) {
 	repo, cleanup := testRepo(t)
 	defer cleanup()
 
-	p, err := repo.SavePrompt("test", "tag1, tag2", "bad1", true)
+	p, err := repo.SavePrompt("test", "tag1, tag2", "bad1", true, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -329,7 +329,7 @@ func TestPrompts_History(t *testing.T) {
 	defer cleanup()
 
 	for i := 0; i < 5; i++ {
-		repo.SavePrompt("", "t1", "n1", false)
+		repo.SavePrompt("", "t1", "n1", false, "")
 	}
 
 	history, err := repo.GetHistory(3)
@@ -346,7 +346,7 @@ func TestPrompts_TrimHistory(t *testing.T) {
 	defer cleanup()
 
 	for i := 0; i < 10; i++ {
-		repo.SavePrompt("", "t", "n", false)
+		repo.SavePrompt("", "t", "n", false, "")
 	}
 
 	repo.TrimHistory(3)
@@ -361,7 +361,7 @@ func TestPrompts_Delete(t *testing.T) {
 	repo, cleanup := testRepo(t)
 	defer cleanup()
 
-	p, _ := repo.SavePrompt("test", "t", "n", false)
+	p, _ := repo.SavePrompt("test", "t", "n", false, "")
 	repo.DeletePrompt(p.ID)
 
 	history, _ := repo.GetHistory(100)

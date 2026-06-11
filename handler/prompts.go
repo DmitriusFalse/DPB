@@ -37,13 +37,14 @@ func handlePrompts(repo *database.Repo) http.HandlerFunc {
 				PositiveText string `json:"positive_text"`
 				NegativeText string `json:"negative_text"`
 				IsFavorite   bool   `json:"is_favorite"`
+				GenData      string `json:"gen_data"`
 			}
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				jsonError(w, "invalid body", http.StatusBadRequest)
 				return
 			}
 
-			prompt, err := repo.SavePrompt(body.Name, body.PositiveText, body.NegativeText, body.IsFavorite)
+			prompt, err := repo.SavePrompt(body.Name, body.PositiveText, body.NegativeText, body.IsFavorite, body.GenData)
 			if err != nil {
 				jsonError(w, err.Error(), http.StatusInternalServerError)
 				return

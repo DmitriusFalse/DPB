@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" x-data="app()" :class="{ 'dark': isDark }" @keydown.window.prevent.cmd.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.enter="addCustomTag()" @keydown.window.prevent.alt.1="copyPrompt('positive')" @keydown.window.prevent.alt.2="copyPrompt('negative')" @keydown.window.escape="drawerOpen=false;saveModalOpen=false">
+<html lang="ru" x-data="app()" :class="{ 'dark': isDark }" @keydown.window.prevent.cmd.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.enter="addCustomTag()" @keydown.window.prevent.alt.1="copyPrompt('positive')" @keydown.window.prevent.alt.2="copyPrompt('negative')">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,7 +36,7 @@
 </head>
 <body class="bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-100 h-screen overflow-hidden flex flex-col">
   <!-- Header -->
-  <header class="flex items-center gap-3 px-4 py-2 border-b border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-700 shrink-0">
+  <header class="flex items-center gap-4 px-4 py-2.5 border-b border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-700 shrink-0">
     <h1 class="text-lg font-bold whitespace-nowrap" x-text="t('app.title') + (version ? ' v' + version : '')">Danbooru Prompt Builder</h1>
     <span class="text-sm text-gray-500 dark:text-dark-400 shrink-0" x-text="t('packs.label')">Наборы</span>
     <div class="relative" x-data="{ dpOpen: false }" style="min-width:200px">
@@ -113,11 +113,12 @@
     </div>
   </header>
 
-  <div class="flex flex-1 overflow-hidden">
-    <!-- Tags Sidebar — 70% -->
-    <aside class="flex-[7] min-w-0 border-r border-gray-200 dark:border-dark-600 flex flex-col bg-gray-50 dark:bg-dark-700 overflow-hidden">
+  <div class="flex flex-1 overflow-hidden" id="layout-body">
+    <!-- LEFT: Tags Sidebar -->
+    <div :style="leftStyle" class="shrink-0 overflow-hidden flex flex-col" style="width:50%">
+    <aside class="flex-1 min-w-0 border-r border-gray-200 dark:border-dark-600 flex flex-col bg-gray-50 dark:bg-dark-700 overflow-hidden">
       <!-- Presets -->
-      <div class="px-3 py-2 border-b border-gray-200 dark:border-dark-600">
+      <div class="px-4 py-2 border-b border-gray-200 dark:border-dark-600">
         <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5" x-text="t('presets.label')">Пресеты</div>
         <div class="flex flex-wrap gap-1">
           <template x-for="(data, name) in presetData" :key="name">
@@ -127,7 +128,7 @@
       </div>
 
       <!-- Search -->
-      <div class="p-3 border-b border-gray-200 dark:border-dark-600">
+      <div class="p-4 border-b border-gray-200 dark:border-dark-600">
         <input type="text" x-model="searchQuery" @input.debounce="searchTags()" x-ref="searchInput" :placeholder="t('search.placeholder')" class="w-full border rounded px-3 py-2 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
         <div x-show="searchResults.length > 0" class="mt-1 max-h-60 overflow-y-auto p-2 flex flex-wrap gap-1">
           <template x-for="item in searchResults" :key="item.id">
@@ -144,7 +145,7 @@
 
       <!-- Favorites -->
       <div class="border-b border-gray-200 dark:border-dark-600">
-        <button @click="favOpen = !favOpen" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium bg-orange-50 dark:bg-orange-100 hover:bg-orange-100 dark:hover:bg-orange-200 text-orange-600 dark:text-orange-200 dark:hover:text-dark-900">
+        <button @click="favOpen = !favOpen" class="w-full flex items-center justify-between px-4 py-2 text-sm font-medium bg-orange-50 dark:bg-orange-100 hover:bg-orange-100 dark:hover:bg-orange-200 text-orange-600 dark:text-orange-200 dark:hover:text-dark-900">
           <span x-text="t('fav.title')">★ Избранное</span>
           <span x-text="favOpen ? '\u25BC' : '\u25B6'" class="text-xs"></span>
         </button>
@@ -166,7 +167,7 @@
         <div class="border-b border-gray-200 dark:border-dark-600">
           <template x-for="cat in constantTags" :key="cat.name">
           <div>
-            <button @click="constOpen[cat.name] = !constOpen[cat.name]" class="cursor-pointer w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wide bg-blue-50 dark:bg-dark-500 hover:bg-blue-100 dark:hover:bg-dark-600 text-gray-900 dark:text-dark-100">
+            <button @click="constOpen[cat.name] = !constOpen[cat.name]" class="cursor-pointer w-full flex items-center justify-between px-4 py-2 text-xs font-semibold uppercase tracking-wide bg-blue-50 dark:bg-dark-500 hover:bg-blue-100 dark:hover:bg-dark-600 text-gray-900 dark:text-dark-100">
               <span class="flex items-center gap-1.5">
                 <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                 <span x-text="t(cat.tkey || cat.name)"></span>
@@ -188,7 +189,7 @@
               </template>
               <template x-if="cat.subcategories">
                 <template x-for="sub in cat.subcategories" :key="sub.name">
-                  <div>
+      <div class="flex">
                     <button @click="constSubOpen[cat.name+'_'+sub.name] = !constSubOpen[cat.name+'_'+sub.name]" class="cursor-pointer w-full flex items-center justify-between px-2 py-0.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-dark-600 text-gray-500 dark:text-dark-400">
                       <span class="flex items-center gap-1">
                         <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
@@ -216,7 +217,7 @@
 
         <template x-for="cat in tree" :key="cat.name">
           <div>
-            <button @click="toggleCategory(cat)" class="cursor-pointer w-full flex items-center justify-between px-3 py-2 text-sm font-bold uppercase tracking-wide bg-gray-200 dark:bg-dark-600 hover:bg-gray-300 dark:hover:bg-dark-500 text-gray-900 dark:text-dark-100">
+            <button @click="toggleCategory(cat)" class="cursor-pointer w-full flex items-center justify-between px-4 py-2 text-sm font-bold uppercase tracking-wide bg-gray-200 dark:bg-dark-600 hover:bg-gray-300 dark:hover:bg-dark-500 text-gray-900 dark:text-dark-100">
               <div class="flex items-center gap-2 min-w-0">
                 <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                 <span x-text="tCat(cat.name)"></span>
@@ -240,16 +241,33 @@
         </template>
       </div>
     </aside>
+  </div>
 
-    <!-- Workspace — 30% -->
-    <main class="flex-[3] min-w-[30%] flex flex-col overflow-hidden">
-      <!-- Chips -->
-      <div class="p-3 border-b border-gray-200 dark:border-dark-600 overflow-y-auto flex-1 min-h-0 flex flex-col gap-3">
+    <!-- VERTICAL RESIZER (left/center) -->
+    <div class="resizer-x" @mousedown="resizerStart($event, 'left')">
+      <svg class="grip-icon" viewBox="0 0 12 24" aria-hidden="true">
+        <rect x="4" y="2" width="4" height="6" rx="2"/>
+        <rect x="4" y="9" width="4" height="6" rx="2"/>
+        <rect x="4" y="16" width="4" height="6" rx="2"/>
+      </svg>
+    </div>
+
+    <!-- CENTER: split vertically -->
+    <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
+
+    <!-- TOP: Workspace -->
+    <div class="overflow-hidden flex flex-col" :style="{ height: (comfyEnabled ? workComfyRatio : workNoComfyRatio) + '%' }">
+
+      <!-- Chips (always visible) -->
+      <div class="p-4 border-b border-gray-200 dark:border-dark-600 overflow-y-auto min-h-0 flex flex-col gap-4">
         <!-- Positive chips grouped by blocks -->
         <div>
-          <div class="text-xs font-semibold mb-1 flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
-            <span x-text="t('workspace.positive')">Позитивные теги</span>
+          <div class="text-xs font-semibold mb-1 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
+              <span x-text="t('workspace.positive')">Позитивные теги</span>
+            </div>
+            <button @click="clearPositiveChips()" class="px-2 py-1 text-xs border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" x-text="t('actions.clear_tags')">Очистить теги</button>
           </div>
           <template x-for="blockId in [1,2,3,4,5,6,7]" :key="'pb'+blockId">
             <div class="block-section" x-show="positiveByBlock(blockId).length > 0"
@@ -284,9 +302,12 @@
 
         <!-- Negative chips -->
         <div>
-          <div class="text-xs font-semibold mb-1 flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
-            <span x-text="t('workspace.negative')">Негативные теги</span>
+          <div class="text-xs font-semibold mb-1 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+              <span x-text="t('workspace.negative')">Негативные теги</span>
+            </div>
+            <button @click="clearNegativeChips()" class="px-2 py-1 text-xs border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" x-text="t('actions.clear_tags')">Очистить теги</button>
           </div>
           <div :data-block-id="0"
                @dragover="onDragOver($event)"
@@ -312,52 +333,60 @@
         </div>
       </div>
 
-      <!-- Custom input -->
-      <div class="p-3 border-b border-gray-200 dark:border-dark-600">
-        <div class="flex items-center gap-1.5">
-          <input type="text" x-model="customTag" @keydown.enter="addCustomTag(false)" :placeholder="t('custom.placeholder')" class="flex-1 border rounded px-2 py-1 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 min-w-0">
-          <button @click="addCustomTag(false)" class="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" :title="t('custom.to.pos')">+</button>
-          <button @click="addCustomTag(true)" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" :title="t('custom.to.neg')">−</button>
+      <!-- Collapsible prompts section -->
+      <div class="p-2 border-b border-gray-200 dark:border-dark-600">
+        <button @click="promptsOpen = !promptsOpen" class="w-full flex items-center justify-between px-2 py-1.5 text-sm font-medium rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors">
+          <div class="flex items-center gap-2">
+            <span x-text="promptsOpen ? '▼' : '▶'" class="text-xs"></span>
+            <span x-text="t('workspace.prompts')">Промпты</span>
+          </div>
+        </button>
+        <div x-show="promptsOpen" class="space-y-3 overflow-y-auto min-h-0" style="max-height:calc(100vh - 300px)">
+          <!-- Custom input -->
+          <div>
+            <div class="flex items-center gap-1.5">
+              <input type="text" x-model="customTag" @keydown.enter="addCustomTag(false)" :placeholder="t('custom.placeholder')" class="flex-1 border rounded px-2 py-1 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 min-w-0">
+              <button @click="addCustomTag(false)" class="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" :title="t('custom.to.pos')">+</button>
+              <button @click="addCustomTag(true)" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" :title="t('custom.to.neg')">−</button>
+            </div>
+          </div>
+
+          <!-- Positive prompt -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-semibold" x-text="t('prompt.positive')">Позитивный</span>
+              <button @click="copyPrompt('positive')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
+            </div>
+            <textarea x-model="positivePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
+          </div>
+
+          <!-- Negative prompt -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-semibold" x-text="t('prompt.negative')">Негативный</span>
+              <button @click="copyPrompt('negative')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
+            </div>
+            <textarea x-model="negativePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- Prompt outputs -->
-      <div class="flex-1 p-3 space-y-2 overflow-y-auto min-h-0">
-        <!-- Positive prompt (collapsible) -->
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <div class="flex items-center gap-1">
-              <span class="collapse-toggle" @click="promptExpanded = !promptExpanded">
-                <span x-text="promptExpanded ? '▼' : '▶'"></span>
-                <span class="text-xs font-semibold" x-text="t('prompt.positive')">Позитивный</span>
-              </span>
-            </div>
-            <button @click="copyPrompt('positive')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
-          </div>
-          <textarea x-show="promptExpanded" x-model="positivePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
-        </div>
-        <!-- Negative prompt (collapsible) -->
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <div class="flex items-center gap-1">
-              <span class="collapse-toggle" @click="promptExpanded = !promptExpanded">
-                <span x-text="promptExpanded ? '▼' : '▶'"></span>
-                <span class="text-xs font-semibold" x-text="t('prompt.negative')">Негативный</span>
-              </span>
-            </div>
-            <button @click="copyPrompt('negative')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
-          </div>
-          <textarea x-show="promptExpanded" x-model="negativePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
-        </div>
-        <div class="flex flex-wrap gap-1.5">
-          <button @click="savePrompt()" class="px-3 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700" x-text="t('actions.save')">💾 Сохранить</button>
-          <button @click="clearAll(t('actions.clear_confirm') || 'Clear all chips?')" class="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700" x-text="t('actions.clear')">🗑 Очистить</button>
-          <button @click="drawerOpen = !drawerOpen" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" x-text="t('actions.history')">📂 История</button>
-        </div>
+    <!-- HORIZONTAL RESIZER -->
+    <div class="resizer-y" @mousedown="resizerStart($event, 'work')">
+      <svg class="grip-icon" viewBox="0 0 24 12" aria-hidden="true">
+        <rect x="2" y="4" width="6" height="4" rx="2"/>
+        <rect x="9" y="4" width="6" height="4" rx="2"/>
+        <rect x="16" y="4" width="6" height="4" rx="2"/>
+      </svg>
+    </div>
+
+    <!-- BOTTOM: Images + Generation -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
 
         <!-- Tabs (only when comfy enabled) -->
         <template x-if="comfyEnabled">
-          <div class="pt-3 border-t border-gray-200 dark:border-dark-600">
+          <div class="pt-3">
             <div class="tabs">
               <button class="tab-btn" :class="{ active: activeTab === 'tags' }" @click="activeTab = 'tags'" x-text="t('tab.tags')">Изображения тегов</button>
               <button class="tab-btn" :class="{ active: activeTab === 'generation' }" @click="activeTab = 'generation'; loadGenerationData()" x-text="t('tab.generation')">Генерация</button>
@@ -383,6 +412,7 @@
 
             <!-- Generation tab -->
             <div x-show="activeTab === 'generation'">
+              <div class="gen-group-title" x-text="t('comfy.group_main') || 'Основные'">Основные</div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.workflow')">Workflow</span>
                 <div class="relative" style="flex:1;max-width:300px" x-data="{ dpOpen: false }">
@@ -391,18 +421,15 @@
                     <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </button>
-                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms;min-width:100%">
                     <template x-for="wf in workflows" :key="wf.name">
-                      <button @click="selectedWorkflow = wf.name; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedWorkflow === wf.name ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                      <button @click="selectedWorkflow = wf.name; dpOpen = false" class="whitespace-nowrap w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedWorkflow === wf.name ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
                         <span x-text="wf.label"></span>
                       </button>
                     </template>
                   </div>
                 </div>
-              </div>
-              <div class="gen-row">
-                <span class="gen-label" x-text="t('comfy.save_path')">Путь сохранения</span>
-                <input type="text" x-model="savePath" placeholder="./output" class="flex-1 border rounded px-2 py-1 text-xs font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
+                <span class="gen-refresh" @click="refreshGenerationData()" :title="t('comfy.refresh')">⟳</span>
               </div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.checkpoint')">Модель</span>
@@ -412,25 +439,31 @@
                     <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </button>
-                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms;min-width:100%">
                     <template x-for="ckpt in checkpoints" :key="ckpt">
-                      <button @click="selectedCheckpoint = ckpt; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedCheckpoint === ckpt ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                      <button @click="selectedCheckpoint = ckpt; dpOpen = false" class="whitespace-nowrap w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedCheckpoint === ckpt ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
                         <span x-text="ckpt"></span>
                       </button>
                     </template>
                   </div>
                 </div>
-                <span class="gen-refresh" @click="loadCheckpoints()" :title="t('comfy.refresh')">⟳</span>
               </div>
               <div class="gen-row">
-                <span class="gen-label" x-text="t('comfy.steps')">Шаги</span>
-                <input type="range" min="1" max="100" x-model.number="steps" class="border rounded">
-                <input type="number" min="1" max="100" x-model.number="steps" class="border rounded px-2 py-1 text-sm">
-              </div>
-              <div class="gen-row">
-                <span class="gen-label" x-text="t('comfy.cfg')">CFG</span>
-                <input type="range" min="1" max="30" step="0.5" x-model.number="cfg" class="border rounded">
-                <input type="number" min="1" max="30" step="0.5" x-model.number="cfg" class="border rounded px-2 py-1 text-sm" style="width:70px">
+                <span class="gen-label" x-text="t('comfy.resolution')">Разрешение</span>
+                <div class="relative" style="flex:1;max-width:300px" x-data="{ dpOpen: false }">
+                  <button @click="dpOpen = !dpOpen" @click.outside="dpOpen = false" class="w-full flex items-center justify-between gap-1 px-2 py-1 text-sm rounded-lg bg-white dark:bg-dark-600 border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors" :class="{ 'rounded-b-none': dpOpen }">
+                    <span class="truncate text-left" x-text="selectedResolutionText"></span>
+                    <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms;min-width:100%">
+                    <template x-for="res in resolutions" :key="res.dims">
+                      <button @click="selectedResolution = res.dims; dpOpen = false" class="whitespace-nowrap w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedResolution === res.dims ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                        <span x-text="res.name + ' - ' + res.dims"></span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
               </div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.sampler')">Семплер</span>
@@ -440,9 +473,9 @@
                     <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </button>
-                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms;min-width:100%">
                     <template x-for="s in samplers" :key="s">
-                      <button @click="selectedSampler = s; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedSampler === s ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                      <button @click="selectedSampler = s; dpOpen = false" class="whitespace-nowrap w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedSampler === s ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
                         <span x-text="s"></span>
                       </button>
                     </template>
@@ -457,9 +490,9 @@
                     <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </button>
-                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
+                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms;min-width:100%">
                     <template x-for="s in schedulers" :key="s">
-                      <button @click="selectedScheduler = s; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedScheduler === s ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
+                      <button @click="selectedScheduler = s; dpOpen = false" class="whitespace-nowrap w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedScheduler === s ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
                         <span x-text="s"></span>
                       </button>
                     </template>
@@ -467,42 +500,27 @@
                 </div>
               </div>
               <div class="gen-row">
-                <span class="gen-label" x-text="t('comfy.resolution')">Разрешение</span>
-                <div class="relative" style="flex:1;max-width:300px" x-data="{ dpOpen: false }">
-                  <button @click="dpOpen = !dpOpen" @click.outside="dpOpen = false" class="w-full flex items-center justify-between gap-1 px-2 py-1 text-sm rounded-lg bg-white dark:bg-dark-600 border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors" :class="{ 'rounded-b-none': dpOpen }">
-                    <span class="truncate text-left" x-text="selectedResolutionText"></span>
-                    <svg x-show="!dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <svg x-show="dpOpen" width="10" height="6" viewBox="0 0 10 6" class="shrink-0 opacity-40"><path d="M9 5L5 1 1 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </button>
-                  <div x-show="dpOpen" x-transition:enter="transition ease-out origin-top" x-transition:enter-start="scale-y-0 opacity-0" x-transition:enter-end="scale-y-100 opacity-100" x-transition:leave="transition ease-in origin-top" x-transition:leave-start="scale-y-100 opacity-100" x-transition:leave-end="scale-y-0 opacity-0" class="absolute top-full left-0 w-full rounded-b-lg bg-white dark:bg-dark-600 z-50 max-h-48 overflow-y-auto shadow-lg border-x border-b border-gray-300 dark:border-dark-500" style="margin-top:-1px;transition-duration:150ms">
-                    <template x-for="res in resolutions" :key="res.dims">
-                      <button @click="selectedResolution = res.dims; dpOpen = false" class="w-full text-left px-3 py-1.5 text-sm rounded-lg cursor-pointer transition-colors" :class="selectedResolution === res.dims ? 'bg-blue-100 dark:bg-blue-900 font-medium text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-dark-200 hover:bg-gray-100 dark:hover:bg-dark-500'">
-                        <span x-text="res.name + ' - ' + res.dims"></span>
-                      </button>
-                    </template>
-                  </div>
-                </div>
+                <span class="gen-label" x-text="t('comfy.steps')">Шаги</span>
+                <input type="range" min="1" max="100" x-model.number="steps" class="border rounded">
+                <input type="number" min="1" max="100" x-model.number="steps" class="border rounded px-2 py-1 text-sm">
               </div>
+              <div class="gen-row">
+                <span class="gen-label" x-text="t('comfy.cfg')">CFG</span>
+                <input type="range" min="1" max="30" step="0.5" x-model.number="cfg" class="border rounded">
+                <input type="number" min="1" max="30" step="0.5" x-model.number="cfg" class="border rounded px-2 py-1 text-sm" style="width:70px">
+              </div>
+
+              <div class="gen-group-title" x-text="t('comfy.group_extra') || 'Дополнительно'">Дополнительно</div>
               <div class="gen-row">
                 <span class="gen-label" x-text="t('comfy.seed')">Seed</span>
                 <input type="number" x-model.number="seed" min="0" max="2147483647" class="border rounded px-2 py-1 text-sm font-mono bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500" style="width:150px">
                 <label class="flex items-center gap-1 text-xs cursor-pointer select-none">
                   <input type="checkbox" x-model="seedFixed" class="w-3.5 h-3.5">
-                  <span x-text="t('comfy.seed_fix')">Фикс</span>
+                  <span x-text="t('comfy.seed_fix')">Фиксированный Seed</span>
                 </label>
               </div>
-              <div class="mt-3 flex flex-col items-center gap-2">
-                <button @click="generate()" class="btn-gen" :class="generating ? 'btn-gen-busy' : 'btn-gen-ready'" x-text="generating ? t('comfy.generating') : t('comfy.generate')"></button>
-                <div x-show="generating" class="w-full max-w-xs">
-                  <div class="progress-bar">
-                    <div class="progress-bar-fill" :style="'width: ' + generationProgress + '%'"></div>
-                  </div>
-                  <div class="text-xs text-gray-400 text-center mt-1" x-text="generationStatus"></div>
-                </div>
-                <div x-show="generationResult" class="gen-result">
-                  <img :src="generationResult" alt="Generated">
-                </div>
-              </div>
+
+              <button @click="generate()" class="btn-gen w-full mt-4" :class="generating ? 'btn-gen-busy' : 'btn-gen-ready'" x-text="generating ? t('comfy.generating') : t('comfy.generate')"></button>
             </div>
           </div>
         </template>
@@ -511,7 +529,7 @@
         <template x-if="!comfyEnabled">
           <div>
             <template x-if="positiveChips.length > 0 || negativeChips.length > 0">
-              <div class="pt-3 border-t border-gray-200 dark:border-dark-600">
+              <div>
                 <div class="text-xs font-semibold mb-2 text-gray-400 uppercase tracking-wide" x-text="t('images.title')">Изображения тегов</div>
                 <div class="flex flex-wrap gap-3 justify-center">
                   <template x-for="ch in [...positiveChips, ...negativeChips].filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)" :key="ch.name">
@@ -525,76 +543,72 @@
             </template>
           </div>
         </template>
-      </div>
-    </main>
+    </div>
   </div>
 
-  <!-- Drawer -->
-  <div x-show="drawerOpen" class="fixed inset-0 z-50 flex justify-end" @click.self="drawerOpen = false">
-    <div class="absolute inset-0 bg-black/30"></div>
-    <div class="relative w-96 bg-white dark:bg-dark-700 h-full shadow-xl flex flex-col" @click.stop>
-      <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-dark-600">
-        <div class="flex gap-2">
-          <button @click="drawerTab = 'history'" :class="drawerTab === 'history' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-dark-600'" class="px-3 py-1 text-sm rounded" x-text="t('drawer.title.history')">История</button>
-          <button @click="drawerTab = 'favorites'" :class="drawerTab === 'favorites' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-dark-600'" class="px-3 py-1 text-sm rounded" x-text="t('drawer.title.favorites')">Избранное</button>
+    <template x-if="comfyEnabled">
+      <div class="flex">
+        <!-- VERTICAL RESIZER (center/right) -->
+        <div class="resizer-x" @mousedown="resizerStart($event, 'right')">
+          <svg class="grip-icon" viewBox="0 0 12 24" aria-hidden="true">
+            <rect x="4" y="2" width="4" height="6" rx="2"/>
+            <rect x="4" y="9" width="4" height="6" rx="2"/>
+            <rect x="4" y="16" width="4" height="6" rx="2"/>
+          </svg>
         </div>
-        <button @click="drawerOpen = false" class="text-lg">&times;</button>
-      </div>
-      <div class="flex-1 overflow-y-auto p-3">
-        <template x-if="drawerTab === 'history'">
-          <div>
-            <template x-for="p in history" :key="p.id">
-              <div class="p-2 mb-2 border rounded border-gray-200 dark:border-dark-600 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-600" @click="loadPrompt(p)">
-                <div x-text="p.name || t('drawer.prompt.unnamed')" class="font-medium"></div>
-                <div class="text-xs text-gray-400 truncate" x-text="promptPreview(p.positive_text)"></div>
-                <div class="text-xs text-gray-400 mt-1" x-text="p.created_at"></div>
-              </div>
-            </template>
-            <div x-show="history.length === 0" class="text-sm text-gray-400 text-center py-8" x-text="t('drawer.history.empty')">История пуста</div>
-          </div>
-        </template>
-        <template x-if="drawerTab === 'favorites'">
-          <div>
-            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2" x-text="t('drawer.fav.tags')">Избранные теги</div>
-            <template x-if="favorites.length === 0">
-              <div class="text-sm text-gray-400 text-center py-4" x-text="t('drawer.favorites.empty')">Нет избранных тегов</div>
-            </template>
-            <div class="flex flex-wrap gap-1.5 mb-4" x-show="favorites.length > 0">
-              <template x-for="f in favorites" :key="f.tag_name">
-                <span class="tag-pill" :class="selectedClass(f.tag_name)" @click="copyTagName(f.tag_name)">
-                  <span x-text="f.tag_name"></span>
-                  <button class="btn btn-fav" @click.stop="toggleFavorite(f)" :title="t('tag.fav.remove')">★</button>
-                  <button class="btn btn-pos" @click.stop="addTag(f)" :title="t('custom.to.pos')">+</button>
-                  <button class="btn btn-neg" @click.stop="addNegativeTag(f)" :title="t('custom.to.neg')">−</button>
-                </span>
-              </template>
-            </div>
-            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2" x-text="t('drawer.fav.prompts')">Избранные промпты</div>
-            <template x-for="p in favoritePrompts" :key="p.id">
-              <div class="p-2 mb-2 border rounded border-gray-200 dark:border-dark-600 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-600" @click="loadPrompt(p)">
-                <div x-text="p.name" class="font-medium"></div>
-                <div class="text-xs text-gray-400 truncate" x-text="promptPreview(p.positive_text)"></div>
-                <div class="text-xs text-gray-400 mt-1" x-text="p.created_at"></div>
-              </div>
-            </template>
-            <div x-show="favoritePrompts.length === 0" class="text-sm text-gray-400 text-center py-8" x-text="t('drawer.prompts.empty')">Нет сохранённых промптов</div>
-          </div>
-        </template>
-      </div>
-    </div>
-  </div>
 
-  <!-- Save modal -->
-  <div x-show="saveModalOpen" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="saveModalOpen = false">
-    <div class="absolute inset-0 bg-black/30"></div>
-    <div class="relative bg-white dark:bg-dark-700 rounded-lg shadow-xl p-6 w-96">
-      <h3 class="text-lg font-medium mb-4" x-text="t('modal.save.title')">Сохранить промпт</h3>
-      <input type="text" x-model="savePromptName" :placeholder="t('modal.save.placeholder')" class="w-full border rounded px-3 py-2 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 mb-4">
-      <div class="flex gap-2 justify-end">
-        <button @click="saveModalOpen = false" class="px-4 py-2 text-sm bg-gray-200 dark:bg-dark-600 rounded" x-text="t('actions.cancel')">Отмена</button>
-        <button @click="doSavePrompt()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" x-text="t('modal.save.confirm')">Сохранить</button>
+        <!-- RIGHT PREVIEW PANEL -->
+        <div class="preview-panel shrink-0" :style="{ width: rightWidth + 'px' }">
+          <div class="preview-tabs">
+            <button class="preview-tab" :class="{ active: previewTab === 'images' }" @click="previewTab = 'images'" x-text="t('preview.title')">Прошлые генерации</button>
+            <button class="preview-tab" :class="{ active: previewTab === 'history' }" @click="previewTab = 'history'" x-text="t('drawer.title.history')">История</button>
+          </div>
+
+          <div x-show="previewTab === 'images'" class="overflow-y-auto flex-1 p-2 flex flex-wrap gap-2" style="align-content: flex-start;">
+            <template x-for="(imgUrl, idx) in generationHistory" :key="imgUrl">
+              <div class="shrink-0 overflow-hidden rounded border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors" style="width:120px;height:120px" @click="openViewer(idx)">
+                <img :src="imgUrl" alt="" style="object-fit:cover;object-position:center top;width:100%;height:100%">
+              </div>
+            </template>
+            <div x-show="generationHistory.length === 0" class="w-full flex items-center justify-center text-gray-400 dark:text-dark-400 text-xs py-8">
+              <span x-text="t('preview.placeholder')">Нажмите Сгенерировать</span>
+            </div>
+          </div>
+
+          <div x-show="previewTab === 'history'" class="overflow-y-auto flex-1 p-2 space-y-2">
+            <template x-for="p in history" :key="p.id">
+              <div class="p-2 border rounded border-gray-300 dark:border-dark-500 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-600 flex items-start gap-2">
+                <div class="flex-1 min-w-0" @click="loadPrompt(p)">
+                  <div x-text="p.name || t('drawer.prompt.unnamed')" class="font-medium text-xs"></div>
+                  <div class="text-[10px] text-gray-400 truncate" x-text="promptPreview(p.positive_text)"></div>
+                </div>
+                <button @click.stop="deleteHistoryItem(p.id)" class="shrink-0 px-1 py-0.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors" :title="t('actions.delete')">&times;</button>
+              </div>
+            </template>
+            <div x-show="history.length === 0" class="w-full flex items-center justify-center text-gray-400 dark:text-dark-400 text-xs py-8" x-text="t('drawer.history.empty')">История пуста</div>
+          </div>
+
+          <div x-show="generating" class="preview-progress">
+            <div class="progress-bar">
+              <div class="progress-bar-fill" :style="'width: ' + generationProgress + '%'"></div>
+            </div>
+            <div class="text-xs text-gray-400 text-center mt-1" x-text="generationStatus"></div>
+          </div>
+        </div>
       </div>
-    </div>
+    </template>
+</div>
+
+  <!-- Fullscreen image viewer -->
+  <div x-show="viewerImage" class="fixed inset-0 flex items-center justify-center" style="z-index:9999;background:rgba(0,0,0,0.9)" @click.self="closeViewer()" @keydown.escape.window="closeViewer()" @keydown.left.window="prevImage()" @keydown.right.window="nextImage()">
+    <button @click="closeViewer()" style="position:absolute;top:12px;right:12px" class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-black/40 hover:bg-black/60 text-white text-sm cursor-pointer">
+      <span>✕</span>
+      <span x-text="t('preview.viewer.close')">Закрыть</span>
+    </button>
+    <button @click="prevImage()" x-show="generationHistory.length > 1" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:48px;height:48px" class="flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl cursor-pointer">‹</button>
+    <button @click="nextImage()" x-show="generationHistory.length > 1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:48px;height:48px" class="flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl cursor-pointer">›</button>
+    <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-size:14px" class="bg-black/40 px-3 py-1 rounded select-none" x-text="(viewerIndex + 1) + ' / ' + generationHistory.length"></div>
+    <img :src="viewerImage" style="max-width:95vw;max-height:90vh;object-fit:contain" class="select-none" @keydown.escape.window="closeViewer()">
   </div>
 
   <!-- Tree loading modal -->

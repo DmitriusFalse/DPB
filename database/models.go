@@ -43,6 +43,7 @@ type SavedPrompt struct {
 	NegativeText string `json:"negative_text"`
 	IsFavorite   bool   `json:"is_favorite"`
 	CreatedAt    string `json:"created_at"`
+	GenData      string `json:"gen_data"`
 }
 
 type TagPreset struct {

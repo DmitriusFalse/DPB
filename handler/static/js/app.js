@@ -1,9 +1,5 @@
 const BLOCK_IDS = { 'quality': 1, 'sources': 2, 'rating': 3, 'appearance': 4, 'pose': 5, 'scene': 6, 'style': 7 };
-const CATEGORY_COLORS = [
-  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-  '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6',
-  '#84cc16', '#d946ef',
-];
+const BLOCK_COLORS = [null, '#60cdff', '#87b6ff', '#aa7be0', '#d48ebd', '#6ccb6c', '#e8b84a', '#f59a44'];
 
 function app() {
   return {
@@ -136,7 +132,7 @@ function app() {
     savePath: '',
     resolutions: [],
     activeTab: 'tags',
-    promptExpanded: false,
+    promptsOpen: false,
     workflows: [],
     selectedWorkflow: '',
     checkpoints: [],
@@ -152,11 +148,21 @@ function app() {
     generationProgress: 0,
     generationStatus: '',
     generationResult: null,
+    generationHistory: [],
+    viewerImage: null,
+    viewerIndex: -1,
     _genDataLoaded: false,
     seed: 0,
     seedFixed: false,
     nodeTitles: {},
     tagToCategory: {},
+
+    // Layout
+    leftRatio: parseInt(localStorage.getItem('layout_left') || '50'),
+    rightWidth: parseInt(localStorage.getItem('layout_right') || '400'),
+    workNoComfyRatio: parseInt(localStorage.getItem('layout_work_nc') || '75'),
+    workComfyRatio: parseInt(localStorage.getItem('layout_work_c') || '30'),
+    resizing: null,
 
     // Favorites
     favorites: [],
@@ -174,15 +180,10 @@ function app() {
     // Presets
     presetData: {},
 
-    // Drawer
-    drawerOpen: false,
-    drawerTab: 'history',
+    // Preview panel
+    previewTab: 'images',
     history: [],
     favoritePrompts: [],
-
-    // Save modal
-    saveModalOpen: false,
-    savePromptName: '',
 
     // ─── Init ───
 
@@ -200,6 +201,7 @@ function app() {
         if (r.ok) { const d = await r.json(); this.version = d.version; }
       } catch(e) {}
       await this.loadComfyConfig();
+      this.loadGenerationHistory();
     },
 
     // ─── Packs ───
@@ -513,9 +515,13 @@ function app() {
       this.autoSavePrompt();
     },
 
-    clearAll(confirmMsg) {
-      if (confirmMsg && !confirm(confirmMsg)) return;
+    clearPositiveChips() {
       this.positiveChips.splice(0);
+      this.updateChipNames();
+      this.autoSavePrompt();
+    },
+
+    clearNegativeChips() {
       this.negativeChips.splice(0);
       this.updateChipNames();
       this.autoSavePrompt();
@@ -641,33 +647,31 @@ function app() {
 
     assignColors() {
       const map = {};
-      let i = 0;
+      let i = 1;
       for (const cat of this.tree) {
-        map[cat.name] = CATEGORY_COLORS[i++ % CATEGORY_COLORS.length];
+        const idx = i++ % 7 + 1;
+        map[cat.name] = BLOCK_COLORS[idx];
       }
       for (const cat of this.constantTags) {
         const key = cat.tkey?.split('.').pop() || cat.name;
         if (!map[key]) {
-          map[key] = CATEGORY_COLORS[i++ % CATEGORY_COLORS.length];
+          const idx = i++ % 7 + 1;
+          map[key] = BLOCK_COLORS[idx];
         }
       }
       this.categoryColor = map;
     },
 
     getColorForChip(chip) {
-      let key = chip.category === 'const' ? chip.subcategory : chip.category;
-      if (key && key !== 'meta' && this.categoryColor[key]) return this.categoryColor[key];
-      const info = this.tagInfoMap[chip.name];
-      if (info) {
-        key = info.category === 'const' ? info.subcategory : info.category;
-        if (this.categoryColor[key]) return this.categoryColor[key];
-      }
-      return null;
+      return BLOCK_COLORS[chip.block_id] || null;
     },
 
     getCategoryColor(cat) {
       const key = cat.tkey?.split('.').pop() || cat.name;
-      return this.categoryColor[key] || null;
+      if (this.categoryColor[key]) return this.categoryColor[key];
+      const blockId = BLOCK_IDS[key];
+      if (blockId) return BLOCK_COLORS[blockId];
+      return null;
     },
 
     chipCategoryName(chip) {
@@ -758,30 +762,7 @@ function app() {
 
     // ─── Prompt actions ───
 
-    savePrompt() {
-      this.savePromptName = '';
-      this.saveModalOpen = true;
-    },
 
-    async doSavePrompt() {
-      if (!this.savePromptName.trim()) return;
-      try {
-        const res = await fetch('/api/prompts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: this.savePromptName.trim(),
-            positive_text: this.positivePrompt,
-            negative_text: this.negativePrompt
-          })
-        });
-        if (!res.ok) { console.error('doSavePrompt status:', res.status); return; }
-        this.saveModalOpen = false;
-        this.loadHistory();
-      } catch (e) {
-        console.error('savePrompt:', e);
-      }
-    },
 
     async loadHistory() {
       try {
@@ -833,7 +814,8 @@ function app() {
     },
 
     async loadPrompt(p) {
-      this.clearAll();
+      this.positiveChips.splice(0);
+      this.negativeChips.splice(0);
       const posParser = parsePromptData(p.positive_text);
       for (const n of posParser) {
         const ch = { name: n, category: 'meta', subcategory: 'loaded', block_id: this.resolveBlockIdByName(n) };
@@ -848,10 +830,31 @@ function app() {
           this.negativeChips.push(ch);
         }
       }
-      this.drawerOpen = false;
+      // Restore generation settings if available
+      if (p.gen_data) {
+        try {
+          const g = JSON.parse(p.gen_data);
+          if (g.workflow) this.selectedWorkflow = g.workflow;
+          if (g.checkpoint) this.selectedCheckpoint = g.checkpoint;
+          if (g.resolution) this.selectedResolution = g.resolution;
+          if (g.sampler) this.selectedSampler = g.sampler;
+          if (g.scheduler) this.selectedScheduler = g.scheduler;
+          if (g.steps) this.steps = g.steps;
+          if (g.cfg) this.cfg = g.cfg;
+          if (g.seed !== undefined) { this.seed = g.seed; this.seedFixed = true; }
+        } catch(_) {}
+      }
+      this.activeTab = 'generation';
       this.enrichChips();
       this.updateChipNames();
       this.autoSavePrompt();
+    },
+
+    async deleteHistoryItem(id) {
+      try {
+        await fetch('/api/prompts?id=' + id, { method: 'DELETE' });
+        this.loadHistory();
+      } catch(_) {}
     },
 
     // ─── Tag image preview ───
@@ -1000,6 +1003,12 @@ function app() {
       await this.loadNodeTitles();
       await this.loadCheckpoints();
       await this.loadSamplers();
+      this.loadGenSettings();
+    },
+
+    async refreshGenerationData() {
+      this._genDataLoaded = false;
+      await this.loadGenerationData();
     },
 
     async loadNodeTitles() {
@@ -1020,13 +1029,41 @@ function app() {
     async generate() {
       if (this.generating) return;
       if (!this.selectedWorkflow) { this.generationStatus = this.t('comfy.no_workflow'); return; }
+      this.saveGenSettings();
       this.generating = true;
       this.generationProgress = 0;
       this.generationStatus = '';
       this.generationResult = null;
+
       if (!this.seedFixed) {
         this.seed = Math.floor(Math.random() * 2147483647);
       }
+
+      // Auto-save prompt to history
+      try {
+        const now = new Date();
+        const ts = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+        await fetch('/api/prompts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: this.seed + ' - ' + ts,
+            positive_text: this.positivePrompt,
+            negative_text: this.negativePrompt,
+            gen_data: JSON.stringify({
+              workflow: this.selectedWorkflow,
+              checkpoint: this.selectedCheckpoint,
+              resolution: this.selectedResolution,
+              sampler: this.selectedSampler,
+              scheduler: this.selectedScheduler,
+              steps: this.steps,
+              cfg: this.cfg,
+              seed: this.seed
+            })
+          })
+        });
+        this.loadHistory();
+      } catch(_) {}
 
       const clientId = crypto.randomUUID();
       const parts = this.selectedResolution.split('x');
@@ -1090,7 +1127,11 @@ function app() {
               subfolder: img.subfolder || '',
               type: img.type || 'output'
             });
-            this.generationResult = '/api/comfy/image?' + params.toString();
+            const url = '/api/comfy/image?' + params.toString();
+            this.generationResult = url;
+            this.generationHistory.unshift(url);
+            if (this.generationHistory.length > 50) this.generationHistory.length = 50;
+            this.saveGenerationHistory();
             this.generationProgress = 100;
             this.generationStatus = this.t('comfy.result') || 'Done';
             fetch('/api/comfy/save-image', {
@@ -1182,7 +1223,101 @@ function app() {
       this.enrichChips();
       this.updateChipNames();
       this.loadAllTreeTags();
-    }
+    },
+
+    get leftStyle() {
+      return 'width:' + this.leftRatio + '%';
+    },
+
+    // ─── Resizer ───
+    resizerStart(e, type) {
+      this.resizing = type;
+      const self = this;
+      const body = document.body;
+      body.classList.add(type === 'work' ? 'resizing-y' : 'resizing');
+      const move = (e) => {
+        if (!self.resizing) return;
+        const rect = document.getElementById('layout-body').getBoundingClientRect();
+        if (self.resizing === 'left') {
+          self.leftRatio = Math.max(20, Math.min(80, Math.round((e.clientX - rect.left) / rect.width * 100)));
+        } else if (self.resizing === 'right') {
+          self.rightWidth = Math.max(300, Math.min(rect.width * 0.5, rect.right - e.clientX));
+        } else if (self.resizing === 'work') {
+          const pct = Math.round((e.clientY - rect.top) / rect.height * 100);
+          const key = self.comfyEnabled ? 'workComfyRatio' : 'workNoComfyRatio';
+          self[key] = Math.max(10, Math.min(90, pct));
+        }
+      };
+      const up = () => {
+        self.resizing = null;
+        body.classList.remove('resizing', 'resizing-y');
+        window.removeEventListener('mousemove', move);
+        window.removeEventListener('mouseup', up);
+        localStorage.setItem('layout_left', self.leftRatio);
+        localStorage.setItem('layout_right', self.rightWidth);
+        localStorage.setItem('layout_work_nc', self.workNoComfyRatio);
+        localStorage.setItem('layout_work_c', self.workComfyRatio);
+      };
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+      e.preventDefault();
+    },
+
+    // ─── Persistence ───
+    loadGenSettings() {
+      try {
+        const d = JSON.parse(localStorage.getItem('gen_settings') || '{}');
+        if (d.selectedWorkflow) this.selectedWorkflow = d.selectedWorkflow;
+        if (d.selectedCheckpoint) this.selectedCheckpoint = d.selectedCheckpoint;
+        if (d.selectedResolution) this.selectedResolution = d.selectedResolution;
+        if (d.selectedSampler) this.selectedSampler = d.selectedSampler;
+        if (d.selectedScheduler) this.selectedScheduler = d.selectedScheduler;
+        if (d.steps) this.steps = d.steps;
+        if (d.cfg) this.cfg = d.cfg;
+        if (d.seed !== undefined) this.seed = d.seed;
+        if (d.seedFixed !== undefined) this.seedFixed = d.seedFixed;
+      } catch(_) {}
+    },
+    saveGenSettings() {
+      try {
+        localStorage.setItem('gen_settings', JSON.stringify({
+          selectedWorkflow: this.selectedWorkflow,
+          selectedCheckpoint: this.selectedCheckpoint,
+          selectedResolution: this.selectedResolution,
+          selectedSampler: this.selectedSampler,
+          selectedScheduler: this.selectedScheduler,
+          steps: this.steps, cfg: this.cfg,
+          seed: this.seed, seedFixed: this.seedFixed
+        }));
+      } catch(_) {}
+    },
+    loadGenerationHistory() {
+      try { this.generationHistory = JSON.parse(localStorage.getItem('gen_history') || '[]'); } catch(_) {}
+    },
+    saveGenerationHistory() {
+      try { localStorage.setItem('gen_history', JSON.stringify(this.generationHistory)); } catch(_) {}
+    },
+
+    // ─── Viewer ───
+    openViewer(index) {
+      if (index < 0 || index >= this.generationHistory.length) return;
+      this.viewerIndex = index;
+      this.viewerImage = this.generationHistory[index];
+    },
+    closeViewer() {
+      this.viewerImage = null;
+      this.viewerIndex = -1;
+    },
+    prevImage() {
+      if (!this.viewerImage || this.generationHistory.length < 2) return;
+      this.viewerIndex = (this.viewerIndex - 1 + this.generationHistory.length) % this.generationHistory.length;
+      this.viewerImage = this.generationHistory[this.viewerIndex];
+    },
+    nextImage() {
+      if (!this.viewerImage || this.generationHistory.length < 2) return;
+      this.viewerIndex = (this.viewerIndex + 1) % this.generationHistory.length;
+      this.viewerImage = this.generationHistory[this.viewerIndex];
+    },
   };
 }
 

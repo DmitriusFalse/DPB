@@ -67,6 +67,7 @@ var migrations = []string{
 	`CREATE INDEX IF NOT EXISTS idx_tags_category ON tags(category_name, subcategory_name)`,
 	`CREATE INDEX IF NOT EXISTS idx_tags_file ON tags(file_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_tags_file_tag ON tags(file_id, tag_name)`,
+	`ALTER TABLE saved_prompts ADD COLUMN gen_data TEXT NOT NULL DEFAULT ''`,
 }
 
 func Init(dbPath string) (*sql.DB, error) {
