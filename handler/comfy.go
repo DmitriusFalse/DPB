@@ -119,27 +119,28 @@ func handleComfyGenerate(cfg *config.Config) http.HandlerFunc {
 func handleComfyImage(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filename := r.URL.Query().Get("filename")
-		subfolder := r.URL.Query().Get("subfolder")
-		imgType := r.URL.Query().Get("type")
 		if filename == "" {
-			jsonError(w, "filename required", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "image/gif")
+			w.Write(transparentGIF)
 			return
 		}
-		comfyAddr := cfg.ComfyAddress
-		viewURL := comfyAddr + "/view?filename=" + filename
-		if subfolder != "" {
-			viewURL += "&subfolder=" + subfolder
+
+		if cfg.SavePath != "" {
+			localPath := filepath.Join(cfg.SavePath, filename)
+			if f, err := os.Open(localPath); err == nil {
+				defer f.Close()
+				stat, err := f.Stat()
+				if err == nil && stat.Size() > 0 {
+					w.Header().Set("Content-Type", "image/png")
+					w.Header().Set("Cache-Control", "max-age=86400")
+					http.ServeContent(w, r, filename, stat.ModTime(), f)
+					return
+				}
+			}
 		}
-		if imgType != "" {
-			viewURL += "&type=" + imgType
-		}
-		resp, err := http.Get(viewURL)
-		if err != nil {
-			jsonError(w, "comfyui image fetch failed: "+err.Error(), http.StatusBadGateway)
-			return
-		}
-		defer resp.Body.Close()
-		io.Copy(w, resp.Body)
+
+		w.Header().Set("Content-Type", "image/gif")
+		w.Write(transparentGIF)
 	}
 }
 

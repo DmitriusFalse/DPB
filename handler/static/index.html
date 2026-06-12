@@ -132,12 +132,15 @@
         <input type="text" x-model="searchQuery" @input.debounce="searchTags()" x-ref="searchInput" :placeholder="t('search.placeholder')" class="w-full border rounded px-3 py-2 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
         <div x-show="searchResults.length > 0" class="mt-1 max-h-60 overflow-y-auto p-2 flex flex-wrap gap-1">
           <template x-for="item in searchResults" :key="item.id">
-            <span class="tag-pill text-xs" :class="selectedClass(item.tag_name)" @click="addTag(item)">
-              <span x-text="item.tag_name" :title="item.aliases" class="max-w-40 truncate"></span>
-              <span class="text-[10px] opacity-60 shrink-0" x-text="tCat(item.category_name)"></span>
-              <button @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :title="t('tag.fav.add')" class="btn btn-fav"></button>
-              <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
-              <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
+            <span class="tag-pill-wrapper">
+              <span class="tag-pill text-xs" :class="selectedClass(item.tag_name)" @mouseenter="showTagImage($event, item.tag_name)" @mouseleave="hideTagImage()" @click="addTag(item)">
+                <span x-text="item.tag_name" :title="item.aliases" class="max-w-40 truncate"></span>
+              </span>
+              <span class="hover-actions">
+                <button class="fav" @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :data-title="t('tag.fav.add')"></button>
+                <button @click.stop="copyTagName(item.tag_name)" :data-title="t('tag.copy')">📋</button>
+                <button class="neg" @click.stop="addNegativeTag(item)" :data-title="t('tag.neg')">−</button>
+              </span>
             </span>
           </template>
         </div>
@@ -151,11 +154,15 @@
         </button>
         <div x-show="favOpen" class="p-2 max-h-48 overflow-y-auto flex flex-wrap gap-1">
           <template x-for="item in favorites" :key="item.tag_name">
-            <span class="tag-pill" :class="selectedClass(item.tag_name)" @click="copyTagName(item.tag_name)">
-              <span x-text="item.tag_name" class="max-w-40 truncate"></span>
-              <button @click.stop="toggleFavorite(item)" class="btn btn-fav" :title="t('tag.fav.remove')">★</button>
-              <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
-              <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
+            <span class="tag-pill-wrapper">
+              <span class="tag-pill" :class="selectedClass(item.tag_name)" @click="addTag(item)">
+                <span x-text="item.tag_name" class="max-w-40 truncate"></span>
+              </span>
+              <span class="hover-actions">
+                <button class="fav" @click.stop="toggleFavorite(item)" :data-title="t('tag.fav.remove')">★</button>
+                <button @click.stop="copyTagName(item.tag_name)" :data-title="t('tag.copy')">📋</button>
+                <button class="neg" @click.stop="addNegativeTag(item)" :data-title="t('tag.neg')">−</button>
+              </span>
             </span>
           </template>
           <div x-show="favorites.length === 0" class="w-full text-xs text-gray-400 px-2 py-1" x-text="t('fav.empty')">Нет избранных тегов</div>
@@ -179,10 +186,15 @@
               <template x-if="cat.tags">
                 <div class="flex flex-wrap gap-1">
                   <template x-for="tag in cat.tags" :key="tag">
-                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="copyTagName(tag)">
-                      <span x-text="tag" class="max-w-40 truncate"></span>
-                      <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
-                      <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                    <span class="tag-pill-wrapper">
+                      <span class="tag-pill text-xs" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })">
+                        <span x-text="tag" class="max-w-40 truncate"></span>
+                      </span>
+                      <span class="hover-actions">
+                        <button class="fav" @click.stop="toggleFavorite({ tag_name: tag })" x-text="isFav(tag) ? '\u2605' : '\u2606'" :data-title="t('tag.fav.add')"></button>
+                        <button @click.stop="copyTagName(tag)" :data-title="t('tag.copy')">📋</button>
+                        <button class="neg" @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })" :data-title="t('tag.neg')">−</button>
+                      </span>
                     </span>
                   </template>
                 </div>
@@ -200,10 +212,15 @@
                     </button>
                     <div x-show="constSubOpen[cat.name+'_'+sub.name]" class="flex flex-wrap gap-1 px-2 py-1">
                       <template x-for="tag in sub.tags" :key="tag">
-                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="copyTagName(tag)">
-                          <span x-text="tag" class="max-w-40 truncate"></span>
-                          <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
-                          <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                    <span class="tag-pill-wrapper">
+                          <span class="tag-pill text-xs" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })">
+                            <span x-text="tag" class="max-w-40 truncate"></span>
+                          </span>
+                          <span class="hover-actions">
+                            <button class="fav" @click.stop="toggleFavorite({ tag_name: tag })" x-text="isFav(tag) ? '\u2605' : '\u2606'" :data-title="t('tag.fav.add')"></button>
+                            <button @click.stop="copyTagName(tag)" :data-title="t('tag.copy')">📋</button>
+                            <button class="neg" @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })" :data-title="t('tag.neg')">−</button>
+                          </span>
                         </span>
                       </template>
                     </div>
@@ -228,11 +245,15 @@
             <div x-show="treeOpen[cat.name]">
               <div class="px-4 py-2 flex flex-wrap gap-1.5">
                 <template x-for="item in (cat._tags || [])" :key="item.id">
-                  <span class="tag-pill" :class="selectedClass(item.tag_name)" @mouseenter="showTagImage($event, item.tag_name)" @mouseleave="hideTagImage()" @click="copyTagName(item.tag_name)">
-                    <span x-text="item.tag_name" :title="item.aliases" class="max-w-60 truncate"></span>
-                    <button @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :title="t('tag.fav.add')" class="btn btn-fav"></button>
-                    <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
-                    <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                  <span class="tag-pill-wrapper">
+                    <span class="tag-pill" :class="selectedClass(item.tag_name)" @mouseenter="showTagImage($event, item.tag_name)" @mouseleave="hideTagImage()" @click="addTag(item)">
+                      <span x-text="item.tag_name" :title="item.aliases" class="max-w-60 truncate"></span>
+                    </span>
+                    <span class="hover-actions">
+                      <button class="fav" @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :data-title="t('tag.fav.add')"></button>
+                      <button @click.stop="copyTagName(item.tag_name)" :data-title="t('tag.copy')">📋</button>
+                      <button class="neg" @click.stop="addNegativeTag(item)" :data-title="t('tag.neg')">−</button>
+                    </span>
                   </span>
                 </template>
               </div>

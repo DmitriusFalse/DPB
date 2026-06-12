@@ -128,8 +128,6 @@ function app() {
 
     // ComfyUI
     comfyEnabled: false,
-    comfyAddress: 'http://127.0.0.1:8188',
-    savePath: '',
     resolutions: [],
     activeTab: 'tags',
     promptsOpen: false,
@@ -158,7 +156,7 @@ function app() {
     tagToCategory: {},
 
     // Layout
-    leftRatio: parseInt(localStorage.getItem('layout_left') || '50'),
+    leftRatio: parseInt(localStorage.getItem('layout_left') || '20'),
     rightWidth: parseInt(localStorage.getItem('layout_right') || '400'),
     workNoComfyRatio: parseInt(localStorage.getItem('layout_work_nc') || '75'),
     workComfyRatio: parseInt(localStorage.getItem('layout_work_c') || '30'),
@@ -952,8 +950,6 @@ function app() {
         if (!r.ok) return;
         const c = await r.json();
         this.comfyEnabled = c.comfy_enabled;
-        this.comfyAddress = c.comfy_address || 'http://127.0.0.1:8188';
-        this.savePath = c.save_path || '';
         this.resolutions = (c.resolutions || 'Square 1:1#512x512').split('\n').map(s => s.trim()).filter(s => s.length > 0).map(s => {
           const parts = s.split('#');
           return parts.length === 2 ? { name: parts[0], dims: parts[1] } : { name: s, dims: s };
