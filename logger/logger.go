@@ -100,9 +100,3 @@ func Error(format string, args ...interface{}) {
 func Debug(format string, args ...interface{}) {
 	defaultLogger.log(LevelDebug, format, args...)
 }
-
-func SetLevel(level Level) {
-	defaultLogger.mu.Lock()
-	defer defaultLogger.mu.Unlock()
-	defaultLogger.level = level
-}

@@ -2,6 +2,7 @@ const BLOCK_IDS = { 'quality': 1, 'sources': 2, 'rating': 3, 'appearance': 4, 'p
 const BLOCK_COLORS = [null, '#60cdff', '#87b6ff', '#aa7be0', '#d48ebd', '#6ccb6c', '#e8b84a', '#f59a44'];
 
 function app() {
+  let _tagImgId = 0;
   return {
     pwaInstallable: pwaInstallable,
 
@@ -171,6 +172,7 @@ function app() {
     negativeChips: [],
     dragState: null,
     dropTarget: null,
+    _ignoreNextClick: false,
 
     // Custom input
     customTag: '',
@@ -379,6 +381,7 @@ function app() {
     },
 
     removeChip(type, name) {
+      if (this._ignoreNextClick) { this._ignoreNextClick = false; return; }
       const arr = type === 'positive' ? this.positiveChips : this.negativeChips;
       const idx = arr.findIndex(c => c.name === name);
       if (idx !== -1) arr.splice(idx, 1);
@@ -469,6 +472,7 @@ function app() {
     onDrop(ev, targetType) {
       ev.preventDefault();
       this._clearDropVisuals();
+      this._ignoreNextClick = true;
       const name = this.dragState?.name;
       if (!name) return;
       const allChips = [...this.positiveChips, ...this.negativeChips];
@@ -852,30 +856,29 @@ function app() {
       try {
         await fetch('/api/prompts?id=' + id, { method: 'DELETE' });
         this.loadHistory();
-      } catch(_) {}
+      } catch(e) { console.error('deleteHistoryItem:', e); }
     },
 
     // ─── Tag image preview ───
 
     tagImage: null,
     tagImagePos: {},
-    _tagImgId: 0,
 
     showTagImage(event, tagName, isStatic = false) {
       if (!isStatic && !this.selectedPackId) return;
-      this._tagImgId++;
-      const myId = this._tagImgId;
+      _tagImgId++;
+      const myId = _tagImgId;
       const el = event.currentTarget;
       const img = new Image();
       img.onload = () => {
-        if (myId !== this._tagImgId) return;
+        if (myId !== _tagImgId) return;
         if (img.naturalWidth <= 1) return;
         this.tagImage = img.src;
         const r = el.getBoundingClientRect();
         this.tagImagePos = { x: r.left, y: r.bottom + 4 };
       };
       img.onerror = () => {
-        if (myId !== this._tagImgId) return;
+        if (myId !== _tagImgId) return;
         this.tagImage = null;
       };
       if (isStatic) {
@@ -964,7 +967,7 @@ function app() {
         if (!r.ok) return;
         this.workflows = await r.json();
         if (this.workflows.length > 0) this.selectedWorkflow = this.workflows[0].name;
-      } catch(_) {}
+      } catch(e) { console.error('loadWorkflows:', e); }
     },
 
     async loadCheckpoints() {
@@ -977,7 +980,7 @@ function app() {
           this.checkpoints = ckpts;
           if (ckpts.length > 0) this.selectedCheckpoint = ckpts[0];
         }
-      } catch(_) {}
+      } catch(e) { console.error('loadCheckpoints:', e); }
     },
 
     async loadSamplers() {
@@ -989,7 +992,7 @@ function app() {
         if (samplerList) { this.samplers = samplerList; this.selectedSampler = samplerList[0] || 'euler'; }
         const schedList = data?.KSampler?.input?.required?.scheduler?.[0];
         if (schedList) { this.schedulers = schedList; this.selectedScheduler = schedList[0] || 'normal'; }
-      } catch(_) {}
+      } catch(e) { console.error('loadSamplers:', e); }
     },
 
     async loadGenerationData() {

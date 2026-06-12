@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -15,9 +16,17 @@ import (
 	"danbooru-prompt-builder/config"
 )
 
+func validPathComponent(name string) bool {
+	return name != "" && !strings.ContainsAny(name, "../\\")
+}
+
 func handleComfyWorkflows(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if name := r.URL.Query().Get("name"); name != "" {
+			if !validPathComponent(name) {
+				jsonError(w, "invalid workflow name", http.StatusBadRequest)
+				return
+			}
 			wfPath := filepath.Join(cfg.WorkflowsPath, name+".json")
 			data, err := os.ReadFile(wfPath)
 			if err != nil {
@@ -64,6 +73,10 @@ func handleComfyGenerate(cfg *config.Config) http.HandlerFunc {
 		}
 		if req.Workflow == "" || req.Macros == nil {
 			jsonError(w, "workflow and macros required", http.StatusBadRequest)
+			return
+		}
+		if !validPathComponent(req.Workflow) {
+			jsonError(w, "invalid workflow name", http.StatusBadRequest)
 			return
 		}
 		wfPath := filepath.Join(cfg.WorkflowsPath, req.Workflow+".json")
@@ -119,7 +132,7 @@ func handleComfyGenerate(cfg *config.Config) http.HandlerFunc {
 func handleComfyImage(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filename := r.URL.Query().Get("filename")
-		if filename == "" {
+		if filename == "" || !validPathComponent(filename) {
 			w.Header().Set("Content-Type", "image/gif")
 			w.Write(transparentGIF)
 			return
@@ -179,11 +192,11 @@ func handleComfySaveImage(cfg *config.Config) http.HandlerFunc {
 			jsonError(w, "invalid request", http.StatusBadRequest)
 			return
 		}
-		if req.Filename == "" {
+		if req.Filename == "" || !validPathComponent(req.Filename) {
 			jsonError(w, "filename required", http.StatusBadRequest)
 			return
 		}
-		viewURL := cfg.ComfyAddress + "/view?filename=" + req.Filename
+		viewURL := cfg.ComfyAddress + "/view?filename=" + url.QueryEscape(req.Filename)
 		if req.Subfolder != "" {
 			viewURL += "&subfolder=" + req.Subfolder
 		}
@@ -245,33 +258,33 @@ func handleComfyWS(cfg *config.Config) http.HandlerFunc {
 		}
 		defer comfyConn.Close()
 
-		errc := make(chan error, 2)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		go func() {
+			defer cancel()
 			for {
 				mt, msg, err := comfyConn.ReadMessage()
 				if err != nil {
-					errc <- err
 					return
 				}
 				if err := browserConn.WriteMessage(mt, msg); err != nil {
-					errc <- err
 					return
 				}
 			}
 		}()
 		go func() {
+			defer cancel()
 			for {
 				_, msg, err := browserConn.ReadMessage()
 				if err != nil {
-					errc <- err
 					return
 				}
 				if err := comfyConn.WriteMessage(websocket.TextMessage, msg); err != nil {
-					errc <- err
 					return
 				}
 			}
 		}()
-		<-errc
+		<-ctx.Done()
 	}
 }

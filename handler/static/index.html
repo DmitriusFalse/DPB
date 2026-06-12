@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" x-data="app()" :class="{ 'dark': isDark }" @keydown.window.prevent.cmd.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.enter="addCustomTag()" @keydown.window.prevent.alt.1="copyPrompt('positive')" @keydown.window.prevent.alt.2="copyPrompt('negative')">
+<html :lang="lang" x-data="app()" :class="{ 'dark': isDark }" @keydown.window.prevent.cmd.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.enter="addCustomTag()" @keydown.window.prevent.alt.1="copyPrompt('positive')" @keydown.window.prevent.alt.2="copyPrompt('negative')">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -199,7 +199,7 @@
                   </template>
                 </div>
               </template>
-              <template x-if="cat.subcategories">
+              <template x-if="cat.subcategories?.length">
                 <template x-for="sub in cat.subcategories" :key="sub.name">
       <div class="flex">
                     <button @click="constSubOpen[cat.name+'_'+sub.name] = !constSubOpen[cat.name+'_'+sub.name]" class="cursor-pointer w-full flex items-center justify-between px-2 py-0.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-dark-600 text-gray-500 dark:text-dark-400">
@@ -378,7 +378,7 @@
               <span class="text-xs font-semibold" x-text="t('prompt.positive')">Позитивный</span>
               <button @click="copyPrompt('positive')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
             </div>
-            <textarea x-model="positivePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
+            <textarea :value="positivePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
           </div>
 
           <!-- Negative prompt -->
@@ -387,7 +387,7 @@
               <span class="text-xs font-semibold" x-text="t('prompt.negative')">Негативный</span>
               <button @click="copyPrompt('negative')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
             </div>
-            <textarea x-model="negativePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
+            <textarea :value="negativePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
           </div>
         </div>
       </div>
@@ -421,7 +421,7 @@
                   <div class="flex flex-wrap gap-3 justify-center">
                     <template x-for="ch in [...positiveChips, ...negativeChips].filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)" :key="ch.name">
                       <div class="flex flex-col items-center gap-1" x-data="{ err: false }" x-show="!err">
-                        <img loading="lazy" :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
+                        <img loading="lazy" :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" :alt="ch.name" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
                         <span class="text-[10px] text-gray-500 truncate max-w-32 text-center" x-text="ch.name"></span>
                       </div>
                     </template>
@@ -555,7 +555,7 @@
                 <div class="flex flex-wrap gap-3 justify-center">
                   <template x-for="ch in [...positiveChips, ...negativeChips].filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)" :key="ch.name">
                     <div class="flex flex-col items-center gap-1" x-data="{ err: false }" x-show="!err">
-                      <img loading="lazy" :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
+                      <img loading="lazy" :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" :alt="ch.name" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
                       <span class="text-[10px] text-gray-500 truncate max-w-32 text-center" x-text="ch.name"></span>
                     </div>
                   </template>
@@ -629,7 +629,7 @@
     <button @click="prevImage()" x-show="generationHistory.length > 1" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:48px;height:48px" class="flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl cursor-pointer">‹</button>
     <button @click="nextImage()" x-show="generationHistory.length > 1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:48px;height:48px" class="flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl cursor-pointer">›</button>
     <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-size:14px" class="bg-black/40 px-3 py-1 rounded select-none" x-text="(viewerIndex + 1) + ' / ' + generationHistory.length"></div>
-    <img :src="viewerImage" style="max-width:95vw;max-height:90vh;object-fit:contain" class="select-none" @keydown.escape.window="closeViewer()">
+    <img :src="viewerImage" alt="Preview" style="max-width:95vw;max-height:90vh;object-fit:contain" class="select-none">
   </div>
 
   <!-- Tree loading modal -->
@@ -646,7 +646,7 @@
 
   <!-- Tag image preview -->
   <div x-show="tagImage" class="fixed z-50 pointer-events-none" :style="'left: ' + tagImagePos.x + 'px; top: ' + tagImagePos.y + 'px'">
-    <img loading="lazy" :src="tagImage" class="max-w-60 max-h-60 rounded shadow-xl border border-gray-300 dark:border-dark-500">
+    <img loading="lazy" :src="tagImage" alt="" class="max-w-60 max-h-60 rounded shadow-xl border border-gray-300 dark:border-dark-500">
   </div>
 
   <div x-show="toastVisible" class="toast">

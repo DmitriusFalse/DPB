@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"danbooru-prompt-builder/database"
 )
@@ -11,7 +12,11 @@ import (
 func handleSearch(repo *database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		packID, _ := strconv.Atoi(r.URL.Query().Get("pack_id"))
-		query := r.URL.Query().Get("q")
+		query := strings.TrimSpace(r.URL.Query().Get("q"))
+		if query == "" {
+			jsonError(w, "query is empty", http.StatusBadRequest)
+			return
+		}
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 		if limit <= 0 {
 			limit = 20

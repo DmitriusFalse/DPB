@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"danbooru-prompt-builder/database"
 )
@@ -30,6 +31,10 @@ func handlePresets(repo *database.Repo) http.HandlerFunc {
 			}
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				jsonError(w, "invalid body", http.StatusBadRequest)
+				return
+			}
+			if strings.TrimSpace(body.Name) == "" {
+				jsonError(w, "name is required", http.StatusBadRequest)
 				return
 			}
 

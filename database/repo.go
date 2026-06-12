@@ -298,28 +298,6 @@ func (r *Repo) GetCategoryTree(packID int) ([]string, error) {
 	return cats, rows.Err()
 }
 
-func (r *Repo) GetSubcategories(packID int, categoryName string) ([]string, error) {
-	rows, err := r.db.Query(`
-		SELECT DISTINCT subcategory_name FROM tags
-		WHERE pack_id = ? AND category_name = ?
-		ORDER BY subcategory_name
-	`, packID, categoryName)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var subs []string
-	for rows.Next() {
-		var s string
-		if err := rows.Scan(&s); err != nil {
-			return nil, err
-		}
-		subs = append(subs, s)
-	}
-	return subs, rows.Err()
-}
-
 func (r *Repo) GetCategoryCounts(packID int) (map[string]int, error) {
 	rows, err := r.db.Query(`
 		SELECT category_name, COUNT(*) FROM tags
@@ -344,7 +322,7 @@ func (r *Repo) GetCategoryCounts(packID int) (map[string]int, error) {
 	return counts, rows.Err()
 }
 
-func (r *Repo) GetTagsByCategory(packID int, categoryName, subcategoryName string, offset, limit int) (tags []Tag, total int, err error) {
+func (r *Repo) GetTagsByCategory(packID int, categoryName string, offset, limit int) (tags []Tag, total int, err error) {
 	err = r.db.QueryRow(`
 		SELECT COUNT(*) FROM tags
 		WHERE pack_id = ? AND category_name = ?
