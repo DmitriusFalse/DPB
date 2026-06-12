@@ -635,6 +635,12 @@ function app() {
       return count;
     },
 
+    counterColorClass(count) {
+      if (count === 0) return 'text-gray-400 dark:text-dark-400';
+      if (count <= 3) return 'text-blue-600 dark:text-blue-400 font-semibold';
+      return 'text-green-600 dark:text-green-400 font-semibold';
+    },
+
     updateChipNames() {
       const p = {}, n = {};
       for (const c of this.positiveChips) p[c.name] = true;

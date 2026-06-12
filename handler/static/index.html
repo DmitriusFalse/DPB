@@ -178,7 +178,7 @@
               <span class="flex items-center gap-1.5">
                 <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                 <span x-text="t(cat.tkey || cat.name)"></span>
-                <span x-show="selectedCountInCategory(cat) > 0" class="ml-1 count-selected" x-text="'(' + selectedCountInCategory(cat) + ')'"></span>
+                <span x-show="selectedCountInCategory(cat) > 0" class="ml-1" :class="counterColorClass(selectedCountInCategory(cat))" x-text="selectedCountInCategory(cat)"></span>
               </span>
               <span x-text="constOpen[cat.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
             </button>
@@ -206,7 +206,7 @@
                       <span class="flex items-center gap-1">
                         <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                         <span x-text="sub.name"></span>
-                        <span x-show="selectedCountInSub(sub) > 0" class="ml-1 count-selected" x-text="'(' + selectedCountInSub(sub) + ')'"></span>
+                        <span x-show="selectedCountInSub(sub) > 0" class="ml-1" :class="counterColorClass(selectedCountInSub(sub))" x-text="selectedCountInSub(sub)"></span>
                       </span>
                       <span x-text="constSubOpen[cat.name+'_'+sub.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
                     </button>
@@ -238,7 +238,7 @@
               <div class="flex items-center gap-2 min-w-0">
                 <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                 <span x-text="tCat(cat.name)"></span>
-                <span class="text-[10px] font-normal" :class="selectedCountInTree(cat) > 0 ? 'count-selected' : 'text-gray-400 dark:text-dark-400'"><span x-show="selectedCountInTree(cat) > 0" x-text="selectedCountInTree(cat) + '/'"></span><span x-text="'('+cat.count+')'"></span></span>
+                <span class="text-[10px] font-normal" :class="counterColorClass(selectedCountInTree(cat))"><span x-show="selectedCountInTree(cat) > 0" x-text="selectedCountInTree(cat) + '/'"></span><span x-text="cat.count"></span></span>
               </div>
               <span x-text="treeOpen[cat.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
             </button>

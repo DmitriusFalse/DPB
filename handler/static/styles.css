@@ -228,6 +228,7 @@ body { margin: 0; font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -appl
 .text-gray-900 { color: var(--c-text); }
 .text-blue-600 { color: var(--c-blue-600); }
 .text-blue-700 { color: var(--c-blue-700); }
+.text-green-600 { color: var(--c-green-600); }
 .text-red-600 { color: var(--c-red-600); }
 .text-orange-600 { color: var(--c-orange-600); }
 .dark .dark\:text-orange-200 { color: var(--c-orange-200); }
