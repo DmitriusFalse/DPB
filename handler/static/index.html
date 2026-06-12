@@ -178,7 +178,7 @@
               <span class="flex items-center gap-1.5">
                 <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                 <span x-text="t(cat.tkey || cat.name)"></span>
-                <span x-show="selectedCountInCategory(cat) > 0" class="ml-1" :class="counterColorClass(selectedCountInCategory(cat))" x-text="selectedCountInCategory(cat)"></span>
+                <span class="ml-1 text-[10px]" :class="counterColorClass(selectedCountInCategory(cat))"><span x-show="selectedCountInCategory(cat) > 0" x-text="selectedCountInCategory(cat) + '/'"></span><span x-text="totalInCategory(cat)"></span></span>
               </span>
               <span x-text="constOpen[cat.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
             </button>
@@ -206,7 +206,7 @@
                       <span class="flex items-center gap-1">
                         <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                         <span x-text="sub.name"></span>
-                        <span x-show="selectedCountInSub(sub) > 0" class="ml-1" :class="counterColorClass(selectedCountInSub(sub))" x-text="selectedCountInSub(sub)"></span>
+                        <span class="ml-1 text-[10px]" :class="counterColorClass(selectedCountInSub(sub))"><span x-show="selectedCountInSub(sub) > 0" x-text="selectedCountInSub(sub) + '/'"></span><span x-text="totalInSub(sub)"></span></span>
                       </span>
                       <span x-text="constSubOpen[cat.name+'_'+sub.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
                     </button>
