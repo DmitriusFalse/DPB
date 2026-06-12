@@ -60,11 +60,18 @@ func Run(port int, actions Actions) {
 }
 
 func OpenBrowser(url string) {
-	var cmd *exec.Cmd
-	cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
-	if err := cmd.Start(); err != nil {
-		logger.Error("Failed to open browser: %v", err)
+	cmds := [][]string{
+		{"cmd", "/c", "start", "msedge", "--app=" + url},
+		{"cmd", "/c", "start", "chrome", "--app=" + url},
+		{"rundll32", "url.dll,FileProtocolHandler", url},
 	}
+	for _, args := range cmds {
+		c := exec.Command(args[0], args[1:]...)
+		if err := c.Start(); err == nil {
+			return
+		}
+	}
+	logger.Error("Failed to open browser")
 }
 
 func openFolder(path string) {
