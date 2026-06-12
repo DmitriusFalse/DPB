@@ -19,6 +19,10 @@ func RegisterRoutes(mux *http.ServeMux, db *sql.DB, cfg *config.Config, syncSvc 
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/static/icon.ico", http.StatusMovedPermanently)
 	})
+	mux.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Service-Worker-Allowed", "/")
+		serveEmbedded(w, r, "/sw.js")
+	})
 	mux.HandleFunc("/", handleIndex())
 	mux.HandleFunc("/settings", handleSettingsPage())
 

@@ -3,7 +3,15 @@ const CACHE_NAME = 'danbooru-prompt-builder-v1';
 const STATIC_URLS = [
   '/static/',
   '/static/js/app.js',
-  '/static/manifest.json'
+  '/static/styles.css',
+  '/static/manifest.json',
+  '/static/icon.ico',
+  '/static/icon-192.png',
+  '/static/icon-512.png',
+  '/static/presets.json',
+  '/static/constants.json',
+  '/static/i18n/ru.json',
+  '/static/i18n/en.json'
 ];
 
 self.addEventListener('install', (event) => {

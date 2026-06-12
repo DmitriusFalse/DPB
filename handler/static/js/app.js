@@ -4,7 +4,8 @@ const BLOCK_COLORS = [null, '#60cdff', '#87b6ff', '#aa7be0', '#d48ebd', '#6ccb6c
 function app() {
   let _tagImgId = 0;
   return {
-    pwaInstallable: pwaInstallable,
+    pwaInstallable: false,
+    _pwaDeferredPrompt: null,
 
     // Theme: 'auto', 'dark', 'light'
     theme: localStorage.getItem('theme') || 'auto',
@@ -193,7 +194,9 @@ function app() {
       await this.loadConstants();
       this.assignColors();
       await this.loadPacks();
-      document.addEventListener('pwa-installable', () => {
+      document.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        this._pwaDeferredPrompt = e;
         this.pwaInstallable = true;
       });
       try {
@@ -202,6 +205,17 @@ function app() {
       } catch(e) {}
       await this.loadComfyConfig();
       this.loadGenerationHistory();
+    },
+
+    // ─── PWA ───
+
+    installPwa() {
+      if (!this._pwaDeferredPrompt) return;
+      this._pwaDeferredPrompt.prompt();
+      this._pwaDeferredPrompt.userChoice.then(() => {
+        this._pwaDeferredPrompt = null;
+        this.pwaInstallable = false;
+      });
     },
 
     // ─── Packs ───
