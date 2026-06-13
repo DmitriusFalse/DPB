@@ -170,6 +170,18 @@
       </div>
     </section>
 
+    <!-- Restore History -->
+    <section>
+      <h2 class="text-lg font-semibold mb-3" x-text="t('comfy.restore_history')">Восстановить историю</h2>
+      <div class="border border-gray-200 dark:border-dark-600 rounded-lg p-4">
+        <p class="text-xs text-gray-500 dark:text-dark-400 mb-3" x-text="t('comfy.restore_history_hint')">Сканирует папку сохранения на наличие PNG с метаданными генерации</p>
+        <div class="flex items-center gap-3">
+          <button @click="restoreHistory()" :disabled="restoring" class="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50" x-text="restoring ? t('comfy.restoring') : t('comfy.restore_history_btn')">Сканировать</button>
+          <span x-show="restoreMsg" x-text="restoreMsg" class="text-sm" :class="restoreOk ? 'text-green-600' : 'text-red-600'"></span>
+        </div>
+      </div>
+    </section>
+
     <div class="flex items-center gap-3 mt-3">
       <button @click="saveConfig()" class="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700" x-text="t('settings.save')">Сохранить</button>
       <span x-show="saveMsg" x-text="saveMsg" class="text-sm" :class="saveOk ? 'text-green-600' : 'text-red-600'"></span>
@@ -207,6 +219,9 @@
         packs: [],
         saveMsg: '',
         saveOk: false,
+        restoring: false,
+        restoreMsg: '',
+        restoreOk: false,
 
         async init() {
           this.loadTranslations();
@@ -273,6 +288,44 @@
             this.saveOk = false;
           }
           setTimeout(() => this.saveMsg = '', 5000);
+        },
+
+        async restoreHistory() {
+          this.restoring = true;
+          this.restoreMsg = '';
+          this.restoreOk = false;
+          try {
+            const res = await fetch('/api/comfy/scan-history', { method: 'POST' });
+            if (!res.ok) { this.restoreMsg = 'Error: ' + res.status; return; }
+            const data = await res.json();
+            const files = data.files || [];
+            if (files.length === 0) {
+              this.restoreMsg = this.t('comfy.restore_history_empty') || 'PNG с метаданными не найдены';
+              return;
+            }
+            let existing = [];
+            try {
+              const raw = localStorage.getItem('generation_history');
+              if (raw) existing = JSON.parse(raw);
+            } catch(_) {}
+            const existingUrls = new Set(existing);
+            const newUrls = [];
+            for (const f of files) {
+              const url = '/api/comfy/image?filename=' + encodeURIComponent(f) + '&subfolder=&type=output';
+              if (!existingUrls.has(url)) {
+                newUrls.push(url);
+                existingUrls.add(url);
+              }
+            }
+            existing = [...newUrls, ...existing];
+            if (existing.length > 50) existing.length = 50;
+            localStorage.setItem('generation_history', JSON.stringify(existing));
+            this.restoreMsg = (this.t('comfy.restore_history_done') || 'Добавлено {n} изображений').replace('{n}', newUrls.length);
+            this.restoreOk = true;
+          } catch(e) {
+            this.restoreMsg = e.message;
+          }
+          this.restoring = false;
         }
       };
     }

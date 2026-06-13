@@ -968,6 +968,7 @@ function app() {
         const r = await fetch('/api/config');
         if (!r.ok) return;
         const c = await r.json();
+        this._config = c;
         this.comfyEnabled = c.comfy_enabled;
         this.resolutions = (c.resolutions || 'Square 1:1#512x512').split('\n').map(s => s.trim()).filter(s => s.length > 0).map(s => {
           const parts = s.split('#');
@@ -1024,6 +1025,20 @@ function app() {
     async refreshGenerationData() {
       this._genDataLoaded = false;
       await this.loadGenerationData();
+    },
+
+    async toggleComfy() {
+      this.comfyEnabled = !this.comfyEnabled;
+      if (this._config) {
+        this._config.comfy_enabled = this.comfyEnabled;
+        try {
+          await fetch('/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this._config)
+          });
+        } catch(e) { console.error('toggleComfy:', e); }
+      }
     },
 
     async loadNodeTitles() {

@@ -815,3 +815,11 @@ button { font-family: inherit; cursor: pointer; color: inherit; background: none
 
 body.resizing, body.resizing * { -webkit-user-select: none !important; user-select: none !important; cursor: col-resize; }
 body.resizing-y, body.resizing-y * { -webkit-user-select: none !important; user-select: none !important; cursor: row-resize; }
+
+/* ── Toggle switch ── */
+.toggle { position:relative; display:inline-block; width:36px; height:20px; cursor:pointer; }
+.toggle-input { display:none; }
+.toggle-track { position:absolute; inset:0; background:var(--c-text-400); border-radius:10px; transition:background 0.15s; }
+.toggle-active .toggle-track { background:var(--c-green-600); }
+.toggle-knob { position:absolute; top:2px; left:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform 0.15s; }
+.toggle-active .toggle-knob { transform:translateX(16px); }

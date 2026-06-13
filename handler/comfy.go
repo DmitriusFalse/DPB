@@ -331,6 +331,41 @@ func handleComfySaveImage(cfg *config.Config) http.HandlerFunc {
 	}
 }
 
+func handleComfyScanHistory(cfg *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		savePath := cfg.SavePath
+		if savePath == "" {
+			savePath = "./output"
+		}
+		entries, err := os.ReadDir(savePath)
+		if err != nil {
+			jsonError(w, "failed to read save path: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var files []string
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".png") {
+				continue
+			}
+			data, err := os.ReadFile(filepath.Join(savePath, entry.Name()))
+			if err != nil {
+				continue
+			}
+			promptStr, err := readPNGPrompt(data)
+			if err != nil || promptStr == "" {
+				continue
+			}
+			files = append(files, entry.Name())
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"files": files})
+	}
+}
+
 func handleComfyWS(cfg *config.Config) http.HandlerFunc {
 	var upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
