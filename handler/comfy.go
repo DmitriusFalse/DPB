@@ -17,7 +17,7 @@ import (
 )
 
 func validPathComponent(name string) bool {
-	return name != "" && !strings.ContainsAny(name, "../\\")
+	return name != "" && !strings.Contains(name, "..") && !strings.Contains(name, "/") && !strings.Contains(name, "\\")
 }
 
 func handleComfyWorkflows(cfg *config.Config) http.HandlerFunc {
