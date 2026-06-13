@@ -571,9 +571,9 @@
 
           <div x-show="previewTab === 'images'" class="overflow-y-auto flex-1 p-2 flex flex-wrap gap-2" style="align-content: flex-start;">
             <template x-for="(imgUrl, idx) in generationHistory" :key="imgUrl">
-              <div class="group shrink-0 overflow-hidden rounded border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors relative" style="width:120px;height:120px" @click="openViewer(idx)">
+              <div x-data="{ hovered: false }" @mouseenter="hovered = true" @mouseleave="hovered = false" class="shrink-0 overflow-hidden rounded border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors relative" style="width:120px;height:120px" @click="openViewer(idx)">
                 <img :src="imgUrl" alt="" style="object-fit:cover;object-position:center top;width:100%;height:100%">
-                <button @click.stop="restoreFromGenerationHistory(idx)" style="position:absolute;top:4px;right:4px;width:24px;height:24px" class="flex items-center justify-center rounded bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button x-show="hovered" @click.stop="restoreFromGenerationHistory(idx)" style="position:absolute;top:4px;right:4px;width:24px;height:24px" class="flex items-center justify-center rounded bg-black/40 hover:bg-black/60">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></polyline></svg>
                 </button>
               </div>
