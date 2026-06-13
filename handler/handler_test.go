@@ -485,8 +485,15 @@ func TestPresets_Get(t *testing.T) {
 	if len(presets) == 0 {
 		t.Fatal("expected seeded preset")
 	}
-	if presets[0].Name != "Pony Quality" {
-		t.Errorf("Name = %q", presets[0].Name)
+	found := false
+	for _, p := range presets {
+		if p.Name == "Quality Only" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("Quality Only preset not found in %v", presets)
 	}
 }
 

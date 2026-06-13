@@ -976,6 +976,28 @@ function app() {
           }
         }
       } catch (_) {}
+      if (!localStorage.getItem('first_launch_done')) {
+        localStorage.setItem('first_launch_done', '1');
+        const data = this.presetData?.['Quality Only'];
+        if (data) {
+          for (const n of data.positive) {
+            if (n === 'BREAK') continue;
+            const ch = { name: n, category: 'meta', subcategory: 'quality', block_id: this.resolveBlockIdByName(n) };
+            if (!this.positiveChips.some(c => c.name === n)) {
+              this.positiveChips.push(ch);
+            }
+          }
+          for (const n of data.negative) {
+            const ch = { name: n, category: 'meta', subcategory: 'quality', block_id: 4 };
+            if (!this.negativeChips.some(c => c.name === n)) {
+              this.negativeChips.push(ch);
+            }
+          }
+          this.enrichChips();
+          this.updateChipNames();
+          this.autoSavePrompt();
+        }
+      }
     },
 
     // ─── ComfyUI ───

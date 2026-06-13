@@ -409,13 +409,13 @@ func TestPresets_DefaultSeed(t *testing.T) {
 	presets, _ := repo.GetPresets()
 	found := false
 	for _, p := range presets {
-		if p.Name == "Pony Quality" {
+		if p.Name == "Quality Only" {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Error("Pony Quality preset not seeded")
+		t.Error("Quality Only preset not seeded")
 	}
 }
 

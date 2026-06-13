@@ -555,14 +555,14 @@ func (r *Repo) DeletePreset(id int) error {
 
 func (r *Repo) SeedDefaultPreset() error {
 	var count int
-	r.db.QueryRow(`SELECT COUNT(*) FROM tag_presets WHERE name = 'Pony Quality'`).Scan(&count)
+	r.db.QueryRow(`SELECT COUNT(*) FROM tag_presets WHERE name = 'Quality Only'`).Scan(&count)
 	if count > 0 {
 		return nil
 	}
 
-	positive := []string{"score_9", "score_8_up", "score_7_up"}
-	negative := []string{"score_4", "score_3", "score_2", "score_1", "source_ani", "worst quality", "low quality"}
+	positive := []string{"score_9", "score_8_up", "score_7_up", "score_6_up", "score_5_up", "BREAK", "best_quality", "high_quality", "high_res", "masterpiece", "detailed"}
+	negative := []string{"low_quality", "worst_quality", "bad_art"}
 
-	_, err := r.SavePreset("Pony Quality", positive, negative)
+	_, err := r.SavePreset("Quality Only", positive, negative)
 	return err
 }
