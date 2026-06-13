@@ -303,23 +303,9 @@
               this.restoreMsg = this.t('comfy.restore_history_empty') || 'PNG с метаданными не найдены';
               return;
             }
-            let existing = [];
-            try {
-              const raw = localStorage.getItem('generation_history');
-              if (raw) existing = JSON.parse(raw);
-            } catch(_) {}
-            const existingUrls = new Set(existing);
-            let added = 0;
-            for (const f of files) {
-              const url = '/api/comfy/image?filename=' + encodeURIComponent(f) + '&subfolder=&type=output';
-              if (!existingUrls.has(url)) {
-                existing.unshift(url);
-                existingUrls.add(url);
-                added++;
-              }
-            }
-            localStorage.setItem('generation_history', JSON.stringify(existing));
-            this.restoreMsg = (this.t('comfy.restore_history_done') || 'Добавлено {n} изображений').replace('{n}', added);
+            const urls = files.map(f => '/api/comfy/image?filename=' + encodeURIComponent(f) + '&subfolder=&type=output');
+            localStorage.setItem('generation_history', JSON.stringify(urls));
+            this.restoreMsg = (this.t('comfy.restore_history_done') || 'Добавлено {n} изображений').replace('{n}', urls.length);
             this.restoreOk = true;
           } catch(e) {
             this.restoreMsg = e.message;
