@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -169,6 +170,87 @@ func handleComfyImage(cfg *config.Config) http.HandlerFunc {
 		w.Header().Set("Content-Type", "image/png")
 		w.Header().Set("Cache-Control", "max-age=86400")
 		io.Copy(w, resp.Body)
+	}
+}
+
+func readPNGPrompt(data []byte) (string, error) {
+	if len(data) < 8 || string(data[:8]) != "\x89PNG\r\n\x1a\n" {
+		return "", nil
+	}
+	pos := 8
+	for pos+8 <= len(data) {
+		length := int(binary.BigEndian.Uint32(data[pos : pos+4]))
+		chunkType := string(data[pos+4 : pos+8])
+		if pos+12+length > len(data) {
+			break
+		}
+		chunkData := data[pos+8 : pos+8+length]
+		if chunkType == "tEXt" || chunkType == "iTXt" {
+			nullIdx := bytes.IndexByte(chunkData, 0)
+			if nullIdx > 0 && nullIdx < len(chunkData) {
+				keyword := string(chunkData[:nullIdx])
+				textData := chunkData[nullIdx+1:]
+				if keyword == "prompt" {
+					return string(textData), nil
+				}
+			}
+		}
+		pos += 12 + length
+	}
+	return "", nil
+}
+
+func handleComfyPromptInfo(cfg *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filename := r.URL.Query().Get("filename")
+		if filename == "" || !validPathComponent(filename) {
+			jsonError(w, "filename required", http.StatusBadRequest)
+			return
+		}
+
+		var pngData []byte
+		if cfg.SavePath != "" {
+			localPath := filepath.Join(cfg.SavePath, filename)
+			if d, err := os.ReadFile(localPath); err == nil && len(d) > 0 {
+				pngData = d
+			}
+		}
+
+		if pngData == nil {
+			viewURL := cfg.ComfyAddress + "/view?filename=" + url.QueryEscape(filename)
+			if subfolder := r.URL.Query().Get("subfolder"); subfolder != "" {
+				viewURL += "&subfolder=" + subfolder
+			}
+			if imgType := r.URL.Query().Get("type"); imgType != "" {
+				viewURL += "&type=" + imgType
+			}
+			resp, err := http.Get(viewURL)
+			if err != nil {
+				jsonError(w, "comfyui request failed: "+err.Error(), http.StatusBadGateway)
+				return
+			}
+			defer resp.Body.Close()
+			pngData, err = io.ReadAll(resp.Body)
+			if err != nil {
+				jsonError(w, "failed to read response", http.StatusBadGateway)
+				return
+			}
+		}
+
+		promptStr, err := readPNGPrompt(pngData)
+		if err != nil || promptStr == "" {
+			jsonError(w, "prompt not found in PNG", http.StatusNotFound)
+			return
+		}
+
+		var promptJSON interface{}
+		if err := json.Unmarshal([]byte(promptStr), &promptJSON); err != nil {
+			jsonError(w, "invalid prompt JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"prompt": promptJSON})
 	}
 }
 

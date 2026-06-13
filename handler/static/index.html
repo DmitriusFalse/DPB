@@ -567,7 +567,6 @@
         <div class="preview-panel shrink-0" :style="{ width: rightWidth + 'px' }">
           <div class="preview-tabs">
             <button class="preview-tab" :class="{ active: previewTab === 'images' }" @click="previewTab = 'images'" x-text="t('preview.title')">Прошлые генерации</button>
-            <button class="preview-tab" :class="{ active: previewTab === 'history' }" @click="previewTab = 'history'" x-text="t('drawer.title.history')">История</button>
           </div>
 
           <div x-show="previewTab === 'images'" class="overflow-y-auto flex-1 p-2 flex flex-wrap gap-2" style="align-content: flex-start;">
@@ -579,19 +578,6 @@
             <div x-show="generationHistory.length === 0" class="w-full flex items-center justify-center text-gray-400 dark:text-dark-400 text-xs py-8">
               <span x-text="t('preview.placeholder')">Нажмите Сгенерировать</span>
             </div>
-          </div>
-
-          <div x-show="previewTab === 'history'" class="overflow-y-auto flex-1 p-2 space-y-2">
-            <template x-for="p in history" :key="p.id">
-              <div class="p-2 border rounded border-gray-300 dark:border-dark-500 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-600 flex items-start gap-2">
-                <div class="flex-1 min-w-0" @click="loadPrompt(p)">
-                  <div x-text="p.name || t('drawer.prompt.unnamed')" class="font-medium text-xs"></div>
-                  <div class="text-[10px] text-gray-400 truncate" x-text="promptPreview(p.positive_text)"></div>
-                </div>
-                <button @click.stop="deleteHistoryItem(p.id)" class="shrink-0 px-1 py-0.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors" :title="t('actions.delete')">&times;</button>
-              </div>
-            </template>
-            <div x-show="history.length === 0" class="w-full flex items-center justify-center text-gray-400 dark:text-dark-400 text-xs py-8" x-text="t('drawer.history.empty')">История пуста</div>
           </div>
 
           <div x-show="generating" class="preview-progress">
@@ -611,9 +597,18 @@
       <span>✕</span>
       <span x-text="t('preview.viewer.close')">Закрыть</span>
     </button>
+    <button @click="restoreFromCurrentImage()" style="position:absolute;top:12px;right:90px" class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-black/40 hover:bg-black/60 text-white text-sm cursor-pointer" title="Восстановить">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></polyline></svg>
+      <span>Восстановить</span>
+    </button>
     <button @click="prevImage()" x-show="generationHistory.length > 1" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:48px;height:48px" class="flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl cursor-pointer">‹</button>
     <button @click="nextImage()" x-show="generationHistory.length > 1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:48px;height:48px" class="flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl cursor-pointer">›</button>
     <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-size:14px" class="bg-black/40 px-3 py-1 rounded select-none" x-text="(viewerIndex + 1) + ' / ' + generationHistory.length"></div>
+    <div x-show="restoreWarnings.length > 0" style="position:absolute;bottom:50px;left:50%;transform:translateX(-50%)" class="bg-red-900/80 text-red-200 text-xs px-4 py-2 rounded select-none flex flex-col gap-1">
+      <template x-for="w in restoreWarnings" :key="w.field">
+        <div><span class="font-semibold" x-text="w.field"></span>: <span x-text="w.value"></span> <span class="text-red-300">(не найдено)</span></div>
+      </template>
+    </div>
     <img :src="viewerImage" alt="Preview" style="max-width:95vw;max-height:90vh;object-fit:contain" class="select-none">
   </div>
 

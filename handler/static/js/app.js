@@ -183,8 +183,8 @@ function app() {
 
     // Preview panel
     previewTab: 'images',
-    history: [],
     favoritePrompts: [],
+    restoreWarnings: [],
 
     // ─── Init ───
 
@@ -204,7 +204,6 @@ function app() {
         if (r.ok) { const d = await r.json(); this.version = d.version; }
       } catch(e) {}
       await this.loadComfyConfig();
-      this.loadGenerationHistory();
     },
 
     // ─── PWA ───
@@ -798,17 +797,6 @@ function app() {
     // ─── Prompt actions ───
 
 
-
-    async loadHistory() {
-      try {
-        const res = await fetch('/api/prompts?favorites=0');
-        if (!res.ok) { console.error('loadHistory status:', res.status); return; }
-        this.history = await res.json();
-      } catch (e) {
-        console.error('loadHistory:', e);
-      }
-    },
-
     async loadFavoritePrompts() {
       try {
         const res = await fetch('/api/prompts?favorites=1');
@@ -846,50 +834,6 @@ function app() {
       } catch (e) {
         console.error('copy:', e);
       }
-    },
-
-    async loadPrompt(p) {
-      this.positiveChips.splice(0);
-      this.negativeChips.splice(0);
-      const posParser = parsePromptData(p.positive_text);
-      for (const n of posParser) {
-        const ch = { name: n, category: 'meta', subcategory: 'loaded', block_id: this.resolveBlockIdByName(n) };
-        if (!this.positiveChips.some(c => c.name === n)) {
-          this.positiveChips.push(ch);
-        }
-      }
-      const negParser = parsePromptData(p.negative_text);
-      for (const n of negParser) {
-        const ch = { name: n, category: 'meta', subcategory: 'loaded', block_id: this.resolveBlockIdByName(n) };
-        if (!this.negativeChips.some(c => c.name === n)) {
-          this.negativeChips.push(ch);
-        }
-      }
-      // Restore generation settings if available
-      if (p.gen_data) {
-        try {
-          const g = JSON.parse(p.gen_data);
-          if (g.workflow) this.selectedWorkflow = g.workflow;
-          if (g.checkpoint) this.selectedCheckpoint = g.checkpoint;
-          if (g.resolution) this.selectedResolution = g.resolution;
-          if (g.sampler) this.selectedSampler = g.sampler;
-          if (g.scheduler) this.selectedScheduler = g.scheduler;
-          if (g.steps) this.steps = g.steps;
-          if (g.cfg) this.cfg = g.cfg;
-          if (g.seed !== undefined) { this.seed = g.seed; this.seedFixed = true; }
-        } catch(_) {}
-      }
-      this.activeTab = 'generation';
-      this.enrichChips();
-      this.updateChipNames();
-      this.autoSavePrompt();
-    },
-
-    async deleteHistoryItem(id) {
-      try {
-        await fetch('/api/prompts?id=' + id, { method: 'DELETE' });
-        this.loadHistory();
-      } catch(e) { console.error('deleteHistoryItem:', e); }
     },
 
     // ─── Tag image preview ───
@@ -1093,32 +1037,6 @@ function app() {
         this.seed = Math.floor(Math.random() * 2147483647);
       }
 
-      // Auto-save prompt to history
-      try {
-        const now = new Date();
-        const ts = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-        await fetch('/api/prompts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: this.seed + ' - ' + ts,
-            positive_text: this.positivePrompt,
-            negative_text: this.negativePrompt,
-            gen_data: JSON.stringify({
-              workflow: this.selectedWorkflow,
-              checkpoint: this.selectedCheckpoint,
-              resolution: this.selectedResolution,
-              sampler: this.selectedSampler,
-              scheduler: this.selectedScheduler,
-              steps: this.steps,
-              cfg: this.cfg,
-              seed: this.seed
-            })
-          })
-        });
-        this.loadHistory();
-      } catch(_) {}
-
       const clientId = crypto.randomUUID();
       const parts = this.selectedResolution.split('x');
       const width = parts[0];
@@ -1185,7 +1103,6 @@ function app() {
             this.generationResult = url;
             this.generationHistory.unshift(url);
             if (this.generationHistory.length > 50) this.generationHistory.length = 50;
-            this.saveGenerationHistory();
             this.generationProgress = 100;
             this.generationStatus = this.t('comfy.result') || 'Done';
             fetch('/api/comfy/save-image', {
@@ -1271,7 +1188,6 @@ function app() {
       await this.loadTree();
       this.assignColors();
       this.loadFavorites();
-      this.loadHistory();
       this.loadFavoritePrompts();
       this.loadAutoSave();
       this.enrichChips();
@@ -1345,12 +1261,6 @@ function app() {
         }));
       } catch(_) {}
     },
-    loadGenerationHistory() {
-      try { this.generationHistory = JSON.parse(localStorage.getItem('gen_history') || '[]'); } catch(_) {}
-    },
-    saveGenerationHistory() {
-      try { localStorage.setItem('gen_history', JSON.stringify(this.generationHistory)); } catch(_) {}
-    },
 
     // ─── Viewer ───
     openViewer(index) {
@@ -1372,14 +1282,69 @@ function app() {
       this.viewerIndex = (this.viewerIndex + 1) % this.generationHistory.length;
       this.viewerImage = this.generationHistory[this.viewerIndex];
     },
-  };
-}
 
-function promptPreview(text) {
-  if (!text) return '';
-  const parts = text.split('BREAK').map(s => s.trim()).filter(s => s.length > 0);
-  const result = parts.join(' | ');
-  return result.substring(0, 100) + (result.length > 100 ? '...' : '');
+    async restoreFromCurrentImage() {
+      if (!this.viewerImage) return;
+      const qs = this.viewerImage.split('?')[1];
+      if (!qs) return;
+      try {
+        const r = await fetch('/api/comfy/prompt-info?' + qs);
+        if (!r.ok) return;
+        const data = await r.json();
+        this.restoreFromWorkflow(data.prompt);
+      } catch(e) { console.error('restore:', e); }
+    },
+
+    async restoreFromWorkflow(wf) {
+      this.restoreWarnings = [];
+      const makeWarning = (field, value) => {
+        if (!this.restoreWarnings.some(w => w.field === field)) {
+          this.restoreWarnings.push({ field, value });
+        }
+      };
+      for (const node of Object.values(wf)) {
+        if (node.class_type === 'CLIPTextEncode') {
+          const text = node.inputs?.text;
+          if (!text) continue;
+          const title = node._meta?.title || '';
+          const chips = (title.toLowerCase().includes('positive') || this.positiveChips.length === 0)
+            ? 'positiveChips' : 'negativeChips';
+          const arr = this[chips];
+          arr.splice(0);
+          for (const n of parsePromptData(text)) {
+            if (!arr.some(c => c.name === n)) {
+              arr.push({ name: n, category: 'meta', subcategory: 'restored', block_id: this.resolveBlockIdByName(n) });
+            }
+          }
+        } else if (node.class_type === 'KSampler') {
+          const inp = node.inputs || {};
+          if (inp.steps !== undefined) this.steps = inp.steps;
+          if (inp.cfg !== undefined) this.cfg = inp.cfg;
+          if (inp.seed !== undefined) { this.seed = inp.seed; this.seedFixed = true; }
+          if (inp.sampler_name && !this.samplers.includes(inp.sampler_name)) {
+            makeWarning('sampler_name', inp.sampler_name);
+          }
+          if (inp.sampler_name) this.selectedSampler = inp.sampler_name;
+          if (inp.scheduler && !this.schedulers.includes(inp.scheduler)) {
+            makeWarning('scheduler', inp.scheduler);
+          }
+          if (inp.scheduler) this.selectedScheduler = inp.scheduler;
+        } else if (node.class_type === 'CheckpointLoaderSimple') {
+          const ckptName = node.inputs?.ckpt_name;
+          if (ckptName) {
+            if (!this.checkpoints.includes(ckptName)) {
+              makeWarning('checkpoint', ckptName);
+            }
+            this.selectedCheckpoint = ckptName;
+          }
+        }
+      }
+      this.enrichChips();
+      this.updateChipNames();
+      this.autoSavePrompt();
+      this.activeTab = 'generation';
+    },
+  };
 }
 
 function parsePromptData(text) {

@@ -58,10 +58,6 @@
 
   "images.title": "Изображения тегов",
 
-  "drawer.title.history": "История",
-  "drawer.history.empty": "История пуста",
-  "drawer.prompt.unnamed": "(без имени)",
-
   "modal.loading.title": "Загрузка тегов...",
 
   "toast.copied": "Скопировано",

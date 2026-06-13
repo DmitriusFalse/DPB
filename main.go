@@ -86,10 +86,6 @@ func setWindowIcon(hwnd uintptr) {
 		return
 	}
 	imgData := icoData[imgOffset : imgOffset+imgSize]
-	// Skip PNG-compressed icons (not supported by CreateIconFromResourceEx)
-	if len(imgData) > 4 && imgData[0] == 0x89 && imgData[1] == 'P' && imgData[2] == 'N' && imgData[3] == 'G' {
-		return
-	}
 	hicon, _, _ := procCreateIconFromResourceEx.Call(
 		uintptr(unsafe.Pointer(&imgData[0])),
 		uintptr(imgSize),

@@ -58,10 +58,6 @@
 
   "images.title": "Tag images",
 
-  "drawer.title.history": "History",
-  "drawer.history.empty": "History is empty",
-  "drawer.prompt.unnamed": "(unnamed)",
-
   "modal.loading.title": "Loading tags...",
 
   "toast.copied": "Copied",
