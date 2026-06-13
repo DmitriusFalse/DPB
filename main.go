@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -27,23 +28,80 @@ import (
 )
 
 var (
-	user32          = syscall.NewLazyDLL("user32.dll")
-	procFindWindow  = user32.NewProc("FindWindowW")
-	procShowWindow  = user32.NewProc("ShowWindow")
+	user32                     = syscall.NewLazyDLL("user32.dll")
+	procFindWindow             = user32.NewProc("FindWindowW")
+	procShowWindow             = user32.NewProc("ShowWindow")
+	procSendMessageW           = user32.NewProc("SendMessageW")
+	procCreateIconFromResourceEx = user32.NewProc("CreateIconFromResourceEx")
 )
 
-const SW_MAXIMIZE = 3
+const (
+	SW_MAXIMIZE = 3
+	WM_SETICON  = 0x0080
+	ICON_SMALL  = 0
+	ICON_BIG    = 1
+)
 
 func maximizeWindow(title string) {
 	titlePtr, err := syscall.UTF16PtrFromString(title)
 	if err != nil {
 		return
 	}
-	// FindWindowW(lpClassName, lpWindowName)
 	hwnd, _, _ := syscall.Syscall(procFindWindow.Addr(), 2, 0, uintptr(unsafe.Pointer(titlePtr)), 0)
 	if hwnd != 0 {
 		syscall.Syscall(procShowWindow.Addr(), 2, hwnd, SW_MAXIMIZE, 0)
+		setWindowIcon(hwnd)
 	}
+}
+
+func setWindowIcon(hwnd uintptr) {
+	icoData := tray.IconData
+	if len(icoData) < 6 {
+		return
+	}
+	count := int(binary.LittleEndian.Uint16(icoData[4:6]))
+	if count == 0 {
+		return
+	}
+	// Find the largest image
+	bestIdx := 0
+	bestW := 0
+	for i := 0; i < count && 6+(i+1)*16 <= len(icoData); i++ {
+		w := int(icoData[6+i*16])
+		if w == 0 {
+			w = 256
+		}
+		if w > bestW {
+			bestW = w
+			bestIdx = i
+		}
+	}
+	if 6+(bestIdx+1)*16 > len(icoData) {
+		return
+	}
+	dirEntry := icoData[6+bestIdx*16:]
+	imgOffset := binary.LittleEndian.Uint32(dirEntry[12:16])
+	imgSize := binary.LittleEndian.Uint32(dirEntry[8:12])
+	if int(imgOffset+imgSize) > len(icoData) {
+		return
+	}
+	imgData := icoData[imgOffset : imgOffset+imgSize]
+	// Skip PNG-compressed icons (not supported by CreateIconFromResourceEx)
+	if len(imgData) > 4 && imgData[0] == 0x89 && imgData[1] == 'P' && imgData[2] == 'N' && imgData[3] == 'G' {
+		return
+	}
+	hicon, _, _ := procCreateIconFromResourceEx.Call(
+		uintptr(unsafe.Pointer(&imgData[0])),
+		uintptr(imgSize),
+		1,              // fIcon = TRUE
+		0x00030000,     // dwVer = 3.00
+		0, 0, 0,        // default size, no flags
+	)
+	if hicon == 0 {
+		return
+	}
+	procSendMessageW.Call(hwnd, WM_SETICON, ICON_SMALL, hicon)
+	procSendMessageW.Call(hwnd, WM_SETICON, ICON_BIG, hicon)
 }
 
 //go:embed version.txt

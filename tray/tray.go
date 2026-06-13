@@ -10,7 +10,7 @@ import (
 )
 
 //go:embed icon.ico
-var iconData []byte
+var IconData []byte
 
 type Actions struct {
 	OnOpen    func()
@@ -21,7 +21,7 @@ type Actions struct {
 func Run(port int, actions Actions) {
 	systray.Run(
 		func() {
-			systray.SetIcon(iconData)
+			systray.SetIcon(IconData)
 			systray.SetTitle("Danbooru Prompt Builder")
 			systray.SetTooltip("Danbooru Prompt Builder")
 
