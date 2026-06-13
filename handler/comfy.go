@@ -152,8 +152,23 @@ func handleComfyImage(cfg *config.Config) http.HandlerFunc {
 			}
 		}
 
-		w.Header().Set("Content-Type", "image/gif")
-		w.Write(transparentGIF)
+		viewURL := cfg.ComfyAddress + "/view?filename=" + url.QueryEscape(filename)
+		if subfolder := r.URL.Query().Get("subfolder"); subfolder != "" {
+			viewURL += "&subfolder=" + subfolder
+		}
+		if imgType := r.URL.Query().Get("type"); imgType != "" {
+			viewURL += "&type=" + imgType
+		}
+		resp, err := http.Get(viewURL)
+		if err != nil {
+			w.Header().Set("Content-Type", "image/gif")
+			w.Write(transparentGIF)
+			return
+		}
+		defer resp.Body.Close()
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "max-age=86400")
+		io.Copy(w, resp.Body)
 	}
 }
 
