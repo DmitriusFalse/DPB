@@ -1028,7 +1028,6 @@ function app() {
     },
 
     async toggleComfy() {
-      this.comfyEnabled = !this.comfyEnabled;
       if (this._config) {
         this._config.comfy_enabled = this.comfyEnabled;
         try {
