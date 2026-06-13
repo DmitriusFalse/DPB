@@ -1,4 +1,4 @@
-const CACHE_NAME = 'danbooru-prompt-builder-v1';
+const CACHE_NAME = 'danbooru-prompt-builder-v2';
 
 const STATIC_URLS = [
   '/static/',

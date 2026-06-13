@@ -1283,6 +1283,19 @@ function app() {
       this.viewerImage = this.generationHistory[this.viewerIndex];
     },
 
+    async restoreFromGenerationHistory(idx) {
+      if (idx < 0 || idx >= this.generationHistory.length) return;
+      const url = this.generationHistory[idx];
+      const qs = url.split('?')[1];
+      if (!qs) return;
+      try {
+        const r = await fetch('/api/comfy/prompt-info?' + qs);
+        if (!r.ok) return;
+        const data = await r.json();
+        this.restoreFromWorkflow(data.prompt);
+      } catch(e) { console.error('restoreFromHistory:', e); }
+    },
+
     async restoreFromCurrentImage() {
       if (!this.viewerImage) return;
       const qs = this.viewerImage.split('?')[1];

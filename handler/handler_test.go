@@ -546,8 +546,8 @@ func TestPrompts_Save(t *testing.T) {
 	w := httptest.NewRecorder()
 	env.mux.ServeHTTP(w, req)
 
-	if w.Code != http.StatusCreated {
-		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected 405, got %d: %s", w.Code, w.Body.String())
 	}
 }
 
@@ -594,42 +594,24 @@ func TestPrompts_GetFavorites(t *testing.T) {
 	}
 }
 
-func TestPrompts_Delete(t *testing.T) {
+func TestPrompts_Delete_Rejected(t *testing.T) {
 	env := setupTest(t)
 	defer env.close()
-
-	p, _ := env.repo.SavePrompt("test", "t", "n", false, "")
 
 	req := httptest.NewRequest("DELETE", "/api/prompts?id=1", nil)
 	w := httptest.NewRecorder()
 	env.mux.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("status = %d", w.Code)
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected 405, got %d", w.Code)
 	}
 
-	req = httptest.NewRequest("GET", "/api/prompts?favorites=0", nil)
+	req = httptest.NewRequest("DELETE", "/api/prompts", nil)
 	w = httptest.NewRecorder()
 	env.mux.ServeHTTP(w, req)
 
-	var prompts []database.SavedPrompt
-	json.Unmarshal(w.Body.Bytes(), &prompts)
-	if len(prompts) != 0 {
-		t.Errorf("expected 0 prompts after delete, got %d", len(prompts))
-	}
-	_ = p
-}
-
-func TestPrompts_DeleteNoID(t *testing.T) {
-	env := setupTest(t)
-	defer env.close()
-
-	req := httptest.NewRequest("DELETE", "/api/prompts", nil)
-	w := httptest.NewRecorder()
-	env.mux.ServeHTTP(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", w.Code)
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected 405, got %d", w.Code)
 	}
 }
 
