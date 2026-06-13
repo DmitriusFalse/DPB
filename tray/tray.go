@@ -61,8 +61,8 @@ func Run(port int, actions Actions) {
 
 func OpenBrowser(url string) {
 	cmds := [][]string{
-		{"cmd", "/c", "start", "msedge", "--app=" + url},
-		{"cmd", "/c", "start", "chrome", "--app=" + url},
+		{"cmd", "/c", "start", "msedge", "--app=" + url, "--start-maximized"},
+		{"cmd", "/c", "start", "chrome", "--app=" + url, "--start-maximized"},
 		{"rundll32", "url.dll,FileProtocolHandler", url},
 	}
 	for _, args := range cmds {
@@ -72,6 +72,10 @@ func OpenBrowser(url string) {
 		}
 	}
 	logger.Error("Failed to open browser")
+}
+
+func Quit() {
+	systray.Quit()
 }
 
 func openFolder(path string) {

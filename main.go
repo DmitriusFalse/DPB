@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 
 	"danbooru-prompt-builder/config"
@@ -20,7 +21,7 @@ import (
 	syncsvc "danbooru-prompt-builder/sync"
 	"danbooru-prompt-builder/tray"
 
-	"github.com/getlantern/systray"
+	webview "github.com/webview/webview_go"
 )
 
 //go:embed version.txt
@@ -75,18 +76,36 @@ func main() {
 		}
 	}()
 
-	tray.OpenBrowser(fmt.Sprintf("http://127.0.0.1:%d", cfg.Port))
+	destroyWebview := make(chan struct{})
+	var destroyOnce sync.Once
 
 	go func() {
 		<-ctx.Done()
 		logger.Debug("Signal received, shutting down...")
-		systray.Quit()
+		destroyOnce.Do(func() { close(destroyWebview) })
 	}()
 
-	tray.Run(cfg.Port, tray.Actions{
+	go tray.Run(cfg.Port, tray.Actions{
 		PacksPath: cfg.TagsPath,
+		OnQuit: func() {
+			destroyOnce.Do(func() { close(destroyWebview) })
+		},
 	})
 
+	addr := fmt.Sprintf("http://127.0.0.1:%d", cfg.Port)
+	w := webview.New(false)
+	w.SetTitle("Danbooru Prompt Builder")
+	w.SetSize(800, 600, webview.HintMax)
+	w.Navigate(addr)
+
+	go func() {
+		<-destroyWebview
+		w.Destroy()
+	}()
+
+	w.Run()
+
+	tray.Quit()
 	logger.Debug("Shutting down server...")
 	server.Shutdown(context.Background())
 }
