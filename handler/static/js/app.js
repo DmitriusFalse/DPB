@@ -149,7 +149,7 @@ function app() {
     generationStatus: '',
     generationResult: null,
     generationHistory: [],
-    previewPerPage: 12,
+    previewPerPage: 25,
     previewPage: 1,
     viewerImage: null,
     viewerIndex: -1,
@@ -207,6 +207,9 @@ function app() {
       } catch(e) {}
       await this.loadComfyConfig();
       this.loadGenerationHistory();
+      window.addEventListener('pageshow', (e) => {
+        if (e.persisted) this.loadGenerationHistory();
+      });
     },
 
     // ─── PWA ───

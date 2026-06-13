@@ -308,19 +308,22 @@
               const raw = localStorage.getItem('generation_history');
               if (raw) existing = JSON.parse(raw);
             } catch(_) {}
+            const existingBefore = existing.length;
             const existingUrls = new Set(existing);
-            const newUrls = [];
+            const maxNew = 50 - existingBefore;
+            let added = 0;
             for (const f of files) {
+              if (added >= maxNew) break;
               const url = '/api/comfy/image?filename=' + encodeURIComponent(f) + '&subfolder=&type=output';
               if (!existingUrls.has(url)) {
-                newUrls.push(url);
+                existing.unshift(url);
                 existingUrls.add(url);
+                added++;
               }
             }
-            existing = [...newUrls, ...existing];
             if (existing.length > 50) existing.length = 50;
             localStorage.setItem('generation_history', JSON.stringify(existing));
-            this.restoreMsg = (this.t('comfy.restore_history_done') || 'Добавлено {n} изображений').replace('{n}', newUrls.length);
+            this.restoreMsg = (this.t('comfy.restore_history_done') || 'Добавлено {n} изображений').replace('{n}', added);
             this.restoreOk = true;
           } catch(e) {
             this.restoreMsg = e.message;
