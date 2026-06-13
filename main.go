@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
+	"unsafe"
 
 	"danbooru-prompt-builder/config"
 	"danbooru-prompt-builder/database"
@@ -23,6 +25,26 @@ import (
 
 	webview "github.com/webview/webview_go"
 )
+
+var (
+	user32          = syscall.NewLazyDLL("user32.dll")
+	procFindWindow  = user32.NewProc("FindWindowW")
+	procShowWindow  = user32.NewProc("ShowWindow")
+)
+
+const SW_MAXIMIZE = 3
+
+func maximizeWindow(title string) {
+	titlePtr, err := syscall.UTF16PtrFromString(title)
+	if err != nil {
+		return
+	}
+	// FindWindowW(lpClassName, lpWindowName)
+	hwnd, _, _ := syscall.Syscall(procFindWindow.Addr(), 2, 0, uintptr(unsafe.Pointer(titlePtr)), 0)
+	if hwnd != 0 {
+		syscall.Syscall(procShowWindow.Addr(), 2, hwnd, SW_MAXIMIZE, 0)
+	}
+}
 
 //go:embed version.txt
 var buildVersion string
@@ -101,6 +123,11 @@ func main() {
 	go func() {
 		<-destroyWebview
 		w.Destroy()
+	}()
+
+	go func() {
+		time.Sleep(150 * time.Millisecond)
+		maximizeWindow("Danbooru Prompt Builder")
 	}()
 
 	w.Run()
