@@ -576,16 +576,29 @@
           </div>
 
           <div x-show="previewTab === 'images'" class="overflow-y-auto flex-1 p-2 flex flex-wrap gap-2" style="align-content: flex-start;">
-            <template x-for="(imgUrl, idx) in generationHistory" :key="imgUrl">
-              <div x-data="{ hovered: false }" @mouseenter="hovered = true" @mouseleave="hovered = false" class="shrink-0 overflow-hidden rounded border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors relative" style="width:120px;height:120px" @click="openViewer(idx)">
-                <img :src="imgUrl" alt="" style="object-fit:cover;object-position:center top;width:100%;height:100%">
-                <button x-show="hovered" @click.stop="restoreFromGenerationHistory(idx)" style="position:absolute;top:4px;right:4px;width:24px;height:24px" class="flex items-center justify-center rounded bg-black/40 hover:bg-black/60">
+            <template x-for="item in paginatedItems()" :key="item.url">
+              <div x-data="{ hovered: false }" @mouseenter="hovered = true" @mouseleave="hovered = false" class="shrink-0 overflow-hidden rounded border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors relative" style="width:120px;height:120px" @click="openViewer(item.idx)">
+                <img :src="item.url" alt="" style="object-fit:cover;object-position:center top;width:100%;height:100%">
+                <button x-show="hovered" @click.stop="restoreFromGenerationHistory(item.idx)" style="position:absolute;top:4px;right:4px;width:24px;height:24px" class="flex items-center justify-center rounded bg-black/40 hover:bg-black/60">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></polyline></svg>
                 </button>
               </div>
             </template>
             <div x-show="generationHistory.length === 0" class="w-full flex items-center justify-center text-gray-400 dark:text-dark-400 text-xs py-8">
               <span x-text="t('preview.placeholder')">Нажмите Сгенерировать</span>
+            </div>
+            <div x-show="generationHistory.length > 0" class="paginator w-full" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 0 4px;width:100%">
+              <select x-model="previewPerPage" @change="previewPage = 1" style="font-size:11px;padding:2px 4px;border-radius:4px;border:1px solid var(--c-border);background:var(--c-bg-white);color:var(--c-text-500)">
+                <option value="6">6</option>
+                <option value="12">12</option>
+                <option value="24">24</option>
+                <option value="50">50</option>
+              </select>
+              <span style="font-size:11px;color:var(--c-text-500)">
+                <span x-text="previewPage"></span>/<span x-text="totalPages()"></span>
+              </span>
+              <button @click="prevPreviewPage()" :disabled="previewPage <= 1" style="font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--c-border);background:var(--c-bg-white);color:var(--c-text-500);cursor:pointer" :style="previewPage <= 1 ? 'opacity:0.3;cursor:default' : ''">&lsaquo;</button>
+              <button @click="nextPreviewPage()" :disabled="previewPage >= totalPages()" style="font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--c-border);background:var(--c-bg-white);color:var(--c-text-500);cursor:pointer" :style="previewPage >= totalPages() ? 'opacity:0.3;cursor:default' : ''">&rsaquo;</button>
             </div>
           </div>
 

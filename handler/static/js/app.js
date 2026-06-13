@@ -149,6 +149,8 @@ function app() {
     generationStatus: '',
     generationResult: null,
     generationHistory: [],
+    previewPerPage: 12,
+    previewPage: 1,
     viewerImage: null,
     viewerIndex: -1,
     _genDataLoaded: false,
@@ -809,6 +811,23 @@ function app() {
           if (Array.isArray(arr)) this.generationHistory = arr;
         }
       } catch(_) {}
+    },
+
+    paginatedItems() {
+      const start = (this.previewPage - 1) * this.previewPerPage;
+      return this.generationHistory.slice(start, start + this.previewPerPage).map((url, i) => ({ url, idx: start + i }));
+    },
+
+    totalPages() {
+      return Math.max(1, Math.ceil(this.generationHistory.length / this.previewPerPage));
+    },
+
+    prevPreviewPage() {
+      if (this.previewPage > 1) this.previewPage--;
+    },
+
+    nextPreviewPage() {
+      if (this.previewPage < this.totalPages()) this.previewPage++;
     },
 
     // ─── Prompt actions ───

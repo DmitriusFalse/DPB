@@ -10,7 +10,9 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 
@@ -346,7 +348,11 @@ func handleComfyScanHistory(cfg *config.Config) http.HandlerFunc {
 			jsonError(w, "failed to read save path: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		var files []string
+		type scannedFile struct {
+			name    string
+			modTime time.Time
+		}
+		var scanned []scannedFile
 		for _, entry := range entries {
 			if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".png") {
 				continue
@@ -359,7 +365,18 @@ func handleComfyScanHistory(cfg *config.Config) http.HandlerFunc {
 			if err != nil || promptStr == "" {
 				continue
 			}
-			files = append(files, entry.Name())
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+			scanned = append(scanned, scannedFile{name: entry.Name(), modTime: info.ModTime()})
+		}
+		sort.Slice(scanned, func(i, j int) bool {
+			return scanned[i].modTime.After(scanned[j].modTime)
+		})
+		files := make([]string, len(scanned))
+		for i, sf := range scanned {
+			files[i] = sf.name
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{"files": files})
