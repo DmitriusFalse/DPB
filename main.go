@@ -95,7 +95,7 @@ func main() {
 	addr := fmt.Sprintf("http://127.0.0.1:%d", cfg.Port)
 	w := webview.New(false)
 	w.SetTitle("Danbooru Prompt Builder")
-	w.SetSize(800, 600, webview.HintMax)
+	w.SetSize(1280, 900, webview.HintNone)
 	w.Navigate(addr)
 
 	go func() {

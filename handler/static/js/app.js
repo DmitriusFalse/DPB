@@ -205,6 +205,10 @@ function app() {
       } catch(e) {}
       await this.loadComfyConfig();
       this.loadGenerationHistory();
+      try {
+        window.moveTo(0, 0);
+        window.resizeTo(screen.availWidth, screen.availHeight);
+      } catch(e) {}
     },
 
     // ─── PWA ───
