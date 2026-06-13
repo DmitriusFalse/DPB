@@ -1155,7 +1155,7 @@ function app() {
             const url = '/api/comfy/image?' + params.toString();
             this.generationResult = url;
             this.generationHistory.unshift(url);
-            if (this.generationHistory.length > 50) this.generationHistory.length = 50;
+            if (this.generationHistory.length > 1000) this.generationHistory.length = 1000;
             this.saveGenerationHistory();
             this.generationProgress = 100;
             this.generationStatus = this.t('comfy.result') || 'Done';
