@@ -38,6 +38,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   if (event.request.method !== 'GET') return;
+  if (event.request.headers.get('Upgrade') === 'websocket') return;
 
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(event.request));

@@ -8,3 +8,6 @@ build/
 *.exe
 static_img/
 tmpcov
+
+# Root icon duplicates
+/static/icon-*.png
