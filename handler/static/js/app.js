@@ -204,6 +204,7 @@ function app() {
         if (r.ok) { const d = await r.json(); this.version = d.version; }
       } catch(e) {}
       await this.loadComfyConfig();
+      this.loadGenerationHistory();
     },
 
     // ─── PWA ───
@@ -794,6 +795,22 @@ function app() {
       return parts;
     },
 
+    saveGenerationHistory() {
+      try {
+        localStorage.setItem('generation_history', JSON.stringify(this.generationHistory));
+      } catch(_) {}
+    },
+
+    loadGenerationHistory() {
+      try {
+        const raw = localStorage.getItem('generation_history');
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) this.generationHistory = arr;
+        }
+      } catch(_) {}
+    },
+
     // ─── Prompt actions ───
 
 
@@ -1103,6 +1120,7 @@ function app() {
             this.generationResult = url;
             this.generationHistory.unshift(url);
             if (this.generationHistory.length > 50) this.generationHistory.length = 50;
+            this.saveGenerationHistory();
             this.generationProgress = 100;
             this.generationStatus = this.t('comfy.result') || 'Done';
             fetch('/api/comfy/save-image', {

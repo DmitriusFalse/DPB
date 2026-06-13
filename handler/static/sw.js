@@ -40,7 +40,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   if (event.request.headers.get('Upgrade') === 'websocket') return;
 
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith('/api/') || url.pathname === '/' || url.pathname === '/settings') {
     event.respondWith(networkFirst(event.request));
     return;
   }
