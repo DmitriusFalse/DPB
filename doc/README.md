@@ -14,7 +14,7 @@ Desktop Windows-приложение для сборки AI-промптов и�
 | Файл | О чём |
 |------|-------|
 | [architecture.md](architecture.md) | Общая архитектура, компоненты, связи |
-| [backend.md](backend.md) | Go-пакеты: main, config, logger, tray, handler |
+| [backend.md](backend.md) | Go-пакеты: main, config, logger, handler |
 | [frontend.md](frontend.md) | SPA: Alpine.js, HTML, CSS, i18n, PWA |
 | [api.md](api.md) | Все HTTP-эндпоинты |
 | [database.md](database.md) | SQLite: схема, модели, репозиторий |

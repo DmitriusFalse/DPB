@@ -13,14 +13,13 @@ A Windows desktop application for building AI image generation prompts from Danb
 - **History & favorites** — save/load prompts
 - **Theme switching** — light/dark/auto
 - **i18n** — Russian/English UI
-- **System tray** — menu: Open, Packs Folder, Settings, Exit
 
 ![Screenshot](screenshots/general_en.png)
 
 ## Usage
 
 1. Place tag pack folders into `./tags/`. Each folder contains `.csv` or `.txt` files.
-2. Run `main.exe` — a system tray icon appears.
+2. Run `main.exe` — the app window opens.
 3. Click "Open" or visit `http://127.0.0.1:8080` in your browser.
 4. Select a pack, click "Rescan".
 5. Search tags, add them to your prompt, copy the result.
@@ -61,7 +60,7 @@ go test ./...
 
 ## Tech Stack
 
-- **Backend**: Go, net/http, SQLite (mattn/go-sqlite3), systray
+- **Backend**: Go, net/http, SQLite (mattn/go-sqlite3)
 - **Frontend**: Alpine.js, CSS custom properties (theming)
 - **Database**: SQLite (WAL, foreign keys) — tables: packs, files, tags, favorite_tags, saved_prompts, tag_presets
 
@@ -86,14 +85,13 @@ If you find this app useful, consider tossing a coin on [Boosty](https://boosty.
 - **История и избранное** — сохранение/загрузка промптов
 - **Переключение темы** — светлая/тёмная/авто
 - **Локализация** — русский/английский интерфейс
-- **Системный трей** — меню: Открыть, Папка наборов, Настройки, Выход
 
 ![Скриншот](screenshots/general_ru.png)
 
 ## Использование
 
 1. Положить папки с тегами (паки) в `./tags/`. Внутри каждой папки — `.csv` или `.txt` файлы.
-2. Запустить `main.exe` — откроется системный трей.
+2. Запустить `main.exe` — откроется окно приложения.
 3. Нажать «Открыть» или перейти в браузер на `http://127.0.0.1:8080`.
 4. Выбрать пак, нажать «Пересканировать».
 5. Искать теги, добавлять в промпт, копировать результат.

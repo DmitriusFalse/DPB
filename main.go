@@ -22,7 +22,6 @@ import (
 	"danbooru-prompt-builder/handler"
 	"danbooru-prompt-builder/logger"
 	syncsvc "danbooru-prompt-builder/sync"
-	"danbooru-prompt-builder/tray"
 
 	webview "github.com/webview/webview_go"
 )
@@ -42,6 +41,9 @@ const (
 	ICON_BIG    = 1
 )
 
+//go:embed handler/static/icon.ico
+var icoFileData []byte
+
 func maximizeWindow(title string) {
 	titlePtr, err := syscall.UTF16PtrFromString(title)
 	if err != nil {
@@ -55,7 +57,7 @@ func maximizeWindow(title string) {
 }
 
 func setWindowIcon(hwnd uintptr) {
-	icoData := tray.IconData
+	icoData := icoFileData
 	if len(icoData) < 6 {
 		return
 	}
@@ -63,7 +65,6 @@ func setWindowIcon(hwnd uintptr) {
 	if count == 0 {
 		return
 	}
-	// Find the largest image
 	bestIdx := 0
 	bestW := 0
 	for i := 0; i < count && 6+(i+1)*16 <= len(icoData); i++ {
@@ -89,9 +90,9 @@ func setWindowIcon(hwnd uintptr) {
 	hicon, _, _ := procCreateIconFromResourceEx.Call(
 		uintptr(unsafe.Pointer(&imgData[0])),
 		uintptr(imgSize),
-		1,              // fIcon = TRUE
-		0x00030000,     // dwVer = 3.00
-		0, 0, 0,        // default size, no flags
+		1,
+		0x00030000,
+		0, 0, 0,
 	)
 	if hicon == 0 {
 		return
@@ -161,13 +162,6 @@ func main() {
 		destroyOnce.Do(func() { close(destroyWebview) })
 	}()
 
-	go tray.Run(cfg.Port, tray.Actions{
-		PacksPath: cfg.TagsPath,
-		OnQuit: func() {
-			destroyOnce.Do(func() { close(destroyWebview) })
-		},
-	})
-
 	addr := fmt.Sprintf("http://127.0.0.1:%d", cfg.Port)
 	w := webview.New(false)
 	w.SetTitle("Danbooru Prompt Builder")
@@ -186,7 +180,6 @@ func main() {
 
 	w.Run()
 
-	tray.Quit()
 	logger.Debug("Shutting down server...")
 	server.Shutdown(context.Background())
 }
