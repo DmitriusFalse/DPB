@@ -132,7 +132,7 @@ go test ./...
 
 ## Стек
 
-- **Backend**: Go, net/http, SQLite (mattn/go-sqlite3), systray
+- **Backend**: Go, net/http, SQLite (mattn/go-sqlite3)
 - **Frontend**: Alpine.js, CSS custom properties (темизация)
 - **База данных**: SQLite (WAL, foreign keys) — таблицы: packs, files, tags, favorite_tags, saved_prompts, tag_presets
 
