@@ -1,48 +1,65 @@
 # Danbooru Prompt Builder
 
-A Windows desktop application for building AI image generation prompts from Danbooru-style tag collections.
+A prompt builder utility for AI image generation based on Danbooru tags.
 
-**Note:** This application works with Danbooru tags and fetches previews. Some tags and content may be NSFW (Not Safe For Work). Explicit images are blurred by default.
+**Note:** The application works with Danbooru tags and loads previews. Some tags and content may be NSFW (Not Safe For Work). Explicit images are blurred by default.
 
 ## Features
 
-- **Tag browser** — search, category tree, favorites
-- **Prompt builder** — add tags to positive/negative with `BREAK` grouping by category
-- **Presets** — quick-apply tag sets (Anime, Cartoon, Realistic, etc.)
-- **Image previews** — tag images on hover
-- **History & favorites** — save/load prompts
-- **Theme switching** — light/dark/auto
-- **i18n** — Russian/English UI
+- **Tag Browser** — Browse tags by category, Favorite tags system.
+- **Prompt Builder** — Field with selected tags, text representation.
+- **Image Generation** - You can now generate images directly within the interface.
+- **Image Previews** — Show tag preview images on hover and images generated within the app.
+- **Generation and Prompt History** — Automatic saving of prompts via ComfyUI and loading them into the application interface.
+- **Theme Switcher** — Light/Dark/Auto.
+- **Localization** — English/Russian interface.
 
-![Screenshot](screenshots/general_en.png)
+![Screenshot](screenshots/general_en_v1.5.png)
 
-## Usage
+## How to Run
+Download the latest release: https://github.com/DmitriusFalse/DPB/releases
+Extract the archive.
+Run DanbooruPromptBuilder.exe
 
-1. Place tag pack folders into `./tags/`. Each folder contains `.csv` or `.txt` files.
-2. Run `main.exe` — the app window opens.
-3. Click "Open" or visit `http://127.0.0.1:8080` in your browser.
-4. Select a pack, click "Rescan".
-5. Search tags, add them to your prompt, copy the result.
+### Tags Format
+All tags are located in the `tags` folder, structure:
 
-### Tag Format
-
-**CSV** — filename: `<id>_<category>_<subcategory>.csv` (e.g. `0_general_appearance.csv`). Content: CSV with columns `tag_name, category_name, subcategory_name, aliases`.
-
-Category IDs: `0=general, 1=artist, 3=copyright, 4=character, 5=meta`.
-
-**TXT** — one tag per line. Blank lines and `#` comments are ignored. Filename (without extension) becomes the category name.
-
-## Configuration
-
+```text
+tags/Danbooru/
+  info.pack          — JSON metadata of the pack
+  armor.txt          — one tag per line
+  img/               — tag previews
+    %tags_file_name%/ - Name of the file the tag comes from
+      %tag_name%.png - Image named after the tag
+```
+`info.pack` — format:
 ```json
 {
-  "port": 8080,
-  "tags_path": "./tags",
-  "db_path": "./data.db"
+  "name": "Danbooru",
+  "name_ru": "Данбору",
+  "description": "Tags from Danbooru dataset",
+  "categories": [
+    { "name": "armor", "name_ru": "Броня", "file": "armor.txt", "block_id": 4 },
+    { "name": "background", "name_ru": "Фон", "file": "background.txt", "block_id": 6 }
+  ]
 }
 ```
+`name` - Tag category name in English
+`name_ru` - Tag category name in Russian
+`file` - file containing the list of category tags
+`block_id` - (1–7), determines in which workspace block the tags will appear
 
-Place `config.json` next to `main.exe`. Relative paths are resolved from the config file location.
+Full `block_id` map (1–7):
+
+| ID | EN | RU | Example |
+|---|---|---|---|
+| **1** | Quality | Качество | `quality` — `score_9`, `score_8_up`, ... |
+| **2** | Sources | Источники | `sources` — `source_anime`, `source_cartoon`, ... |
+| **3** | Rating | Рейтинг | `rating` — `rating_safe`, `rating_explicit`, ... |
+| **4** | Characters, Clothes, Body | Персонажи, одежда, тело | `appearance` — everything from the pack (default `block_id`) |
+| **5** | Pose & Action | Позы и действия | `pose` — `standing`, `sitting`, `lying_down`, ... |
+| **6** | Scene & Setting | Сцена и настройки | `scene` — `indoors`, `bedroom`, `beach`, ... |
+| **7** | Style & Lighting | Стиль и освещение | `style` — `natural_lighting`, `photorealistic`, ... |
 
 ## Build
 
@@ -58,7 +75,7 @@ Requires Go 1.26+. All static files are embedded into the binary via `//go:embed
 go test ./...
 ```
 
-## Tech Stack
+## Stack
 
 - **Backend**: Go, net/http, SQLite (mattn/go-sqlite3)
 - **Frontend**: Alpine.js, CSS custom properties (theming)
@@ -66,55 +83,72 @@ go test ./...
 
 ## Support
 
-If you find this app useful, consider tossing a coin on [Boosty](https://boosty.to/sir.geronis/donate). It was built just for fun, and your support is appreciated!
+If you found this application useful, you can toss a coin on [Boosty](https://boosty.to/sir.geronis/donate). It was made for fun, but any support warms the heart!
 
 ---
 
 # Danbooru Prompt Builder
 
-Десктопное приложение для Windows — сборщик промптов для AI-генерации изображений на основе Danbooru-тегов.
+Утилита сборщик промптов для AI-генерации изображений на основе Danbooru-тегов.
 
 **Примечание:** Приложение работает с Danbooru-тегами и загружает превью. Некоторые теги и контент могут быть NSFW (Not Safe For Work). Откровенные изображения по умолчанию размыты.
 
 ## Возможности
 
-- **Браузер тегов** — поиск, дерево категорий, избранное
-- **Сборка промпта** — перетаскивание тегов в позитив/негатив с группировкой по категориям через `BREAK`
-- **Пресеты** — быстрая подстановка наборов тегов (Anime, Cartoon, Realistic и т.д.)
-- **Превью изображений** — показ картинок тегов при наведении
-- **История и избранное** — сохранение/загрузка промптов
+- **Браузер тегов** — Просмотр тегов по категориям, система Избранных тегов
+- **Сборка промпта** — Поле с выбранными тегами, текстовое представление
+- **Генерация изображений** - Теперь можно генерировать прямо внутри интерфейса
+- **Превью изображений** — показ картинок тегов при наведении и картинок что были сгенерированы внутри
+- **История генераций и промптов** — Автоматические сохранение промптов с помощь ComfyUI и загрузка их в интерфейс приложения.
 - **Переключение темы** — светлая/тёмная/авто
 - **Локализация** — русский/английский интерфейс
 
-![Скриншот](screenshots/general_ru.png)
+![Скриншот](screenshots/general_en_v1.5.png)
 
-## Использование
-
-1. Положить папки с тегами (паки) в `./tags/`. Внутри каждой папки — `.csv` или `.txt` файлы.
-2. Запустить `main.exe` — откроется окно приложения.
-3. Нажать «Открыть» или перейти в браузер на `http://127.0.0.1:8080`.
-4. Выбрать пак, нажать «Пересканировать».
-5. Искать теги, добавлять в промпт, копировать результат.
+## Как запустить
+Скачать последний релиз: https://github.com/DmitriusFalse/DPB/releases
+Распаковать
+Запустить DanbooruPromptBuilder.exe
 
 ### Формат тегов
+Все теги лежат в папке tags, структура:
 
-**CSV** — имя файла: `<id>_<категория>_<подкатегория>.csv` (например `0_general_appearance.csv`). Содержимое — CSV с колонками: `tag_name, category_name, subcategory_name, aliases`.
-
-ID категорий: `0=general, 1=artist, 3=copyright, 4=character, 5=meta`.
-
-**TXT** — один тег на строку. Пустые строки и `#` игнорируются. Имя файла (без расширения) становится категорией.
-
-## Конфигурация
-
+```text
+tags/Danbooru/
+  info.pack          — JSON-метаданные пака
+  armor.txt          — один тег на строку
+  img/               — превью для тегов
+    %tags_file_name%/ - Имя файла откуда тег
+      %tag_name%.png - Картинка с названием тега
+```
+info.pack — формат
 ```json
 {
-  "port": 8080,
-  "tags_path": "./tags",
-  "db_path": "./data.db"
+  "name": "Danbooru",
+  "name_ru": "Данбору",
+  "description": "Tags from Danbooru dataset",
+  "categories": [
+    { "name": "armor", "name_ru": "Броня", "file": "armor.txt", "block_id": 4 },
+    { "name": "background", "name_ru": "Фон", "file": "background.txt", "block_id": 6 }
+  ]
 }
 ```
+name - Имя категории тега на английском
+name_ru - Имя категории на русском
+file - файл со списком тегов категории
+block_id - (1–7), определяет в каком блоке рабочей области появятся теги
 
-`config.json` кладётся рядом с `main.exe`. Относительные пути разрешаются от расположения конфига.
+Полная карта block_id (1–7):
+
+| ID | EN | RU | Пример |
+|---|---|---|---|
+| **1** | Quality | Качество | `quality` — `score_9`, `score_8_up`, ... |
+| **2** | Sources | Источники | `sources` — `source_anime`, `source_cartoon`, ... |
+| **3** | Rating | Рейтинг | `rating` — `rating_safe`, `rating_explicit`, ... |
+| **4** | Characters, Clothes, Body | Персонажи, одежда, тело | `appearance` — всё из пака (дефолтный `block_id`) |
+| **5** | Pose & Action | Позы и действия | `pose` — `standing`, `sitting`, `lying_down`, ... |
+| **6** | Scene & Setting | Сцена и настройки | `scene` — `indoors`, `bedroom`, `beach`, ... |
+| **7** | Style & Lighting | Стиль и освещение | `style` — `natural_lighting`, `photorealistic`, ... |
 
 ## Сборка
 
