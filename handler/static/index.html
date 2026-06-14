@@ -1,35 +1,20 @@
 <!DOCTYPE html>
-<html lang="ru" x-data="app()" :class="{ 'dark': isDark }" @keydown.window.prevent.cmd.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.enter="addCustomTag()" @keydown.window.prevent.alt.1="copyPrompt('positive')" @keydown.window.prevent.alt.2="copyPrompt('negative')">
+<html :lang="lang" x-data="app()" :class="{ 'dark': isDark }" @keydown.window.prevent.cmd.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.slash="$refs.searchInput.focus()" @keydown.window.prevent.ctrl.enter="addCustomTag()" @keydown.window.prevent.alt.1="copyPrompt('positive')" @keydown.window.prevent.alt.2="copyPrompt('negative')">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="mobile-web-app-capable" content="yes">
   <title x-text="t('app.title') + (version ? ' v' + version : '')">Danbooru Prompt Builder</title>
   <link rel="manifest" href="/static/manifest.json">
   <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
   <link rel="stylesheet" href="/static/styles.css">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/static/sw.js');
-      });
-    }
-
-    let pwaDeferredPrompt = null;
-    let pwaInstallable = false;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      pwaDeferredPrompt = e;
-      pwaInstallable = true;
-      document.dispatchEvent(new CustomEvent('pwa-installable'));
-    });
-
-    function installPwa() {
-      if (!pwaDeferredPrompt) return;
-      pwaDeferredPrompt.prompt();
-      pwaDeferredPrompt.userChoice.then(() => {
-        pwaDeferredPrompt = null;
-        pwaInstallable = false;
+        navigator.serviceWorker.register('/sw.js');
       });
     }
   </script>
@@ -107,6 +92,12 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
       <span class="w-px h-4 bg-gray-300 dark:bg-dark-500 opacity-40"></span>
+      <span class="text-xs text-gray-400 dark:text-dark-400 font-medium self-center select-none mr-1">Генерация</span>
+      <label class="toggle self-center" x-bind:class="{ 'toggle-active': comfyEnabled }" title="ComfyUI">
+        <input type="checkbox" class="toggle-input" x-model="comfyEnabled" @change="toggleComfy">
+        <span class="toggle-track"><span class="toggle-knob"></span></span>
+      </label>
+      <span class="w-px h-4 bg-gray-300 dark:bg-dark-500 opacity-40"></span>
       <a href="/settings" class="inline-flex items-center self-center text-gray-400 dark:text-dark-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-0.5" :title="t('settings.title')">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </a>
@@ -132,12 +123,15 @@
         <input type="text" x-model="searchQuery" @input.debounce="searchTags()" x-ref="searchInput" :placeholder="t('search.placeholder')" class="w-full border rounded px-3 py-2 text-sm bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500">
         <div x-show="searchResults.length > 0" class="mt-1 max-h-60 overflow-y-auto p-2 flex flex-wrap gap-1">
           <template x-for="item in searchResults" :key="item.id">
-            <span class="tag-pill text-xs" :class="selectedClass(item.tag_name)" @click="addTag(item)">
-              <span x-text="item.tag_name" :title="item.aliases" class="max-w-40 truncate"></span>
-              <span class="text-[10px] opacity-60 shrink-0" x-text="tCat(item.category_name)"></span>
-              <button @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :title="t('tag.fav.add')" class="btn btn-fav"></button>
-              <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
-              <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
+            <span class="tag-pill-wrapper">
+              <span class="tag-pill text-xs" :class="selectedClass(item.tag_name)" @mouseenter="showTagImage($event, item.tag_name)" @mouseleave="hideTagImage()" @click="addTag(item)">
+                <span x-text="item.tag_name" :title="item.aliases" class="max-w-40 truncate"></span>
+              </span>
+              <span class="hover-actions">
+                <button class="fav" @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :data-title="t('tag.fav.add')"></button>
+                <button @click.stop="copyTagName(item.tag_name)" :data-title="t('tag.copy')">📋</button>
+                <button class="neg" @click.stop="addNegativeTag(item)" :data-title="t('tag.neg')">−</button>
+              </span>
             </span>
           </template>
         </div>
@@ -151,11 +145,15 @@
         </button>
         <div x-show="favOpen" class="p-2 max-h-48 overflow-y-auto flex flex-wrap gap-1">
           <template x-for="item in favorites" :key="item.tag_name">
-            <span class="tag-pill" :class="selectedClass(item.tag_name)" @click="copyTagName(item.tag_name)">
-              <span x-text="item.tag_name" class="max-w-40 truncate"></span>
-              <button @click.stop="toggleFavorite(item)" class="btn btn-fav" :title="t('tag.fav.remove')">★</button>
-              <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
-              <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
+            <span class="tag-pill-wrapper">
+              <span class="tag-pill" :class="selectedClass(item.tag_name)" @click="addTag(item)">
+                <span x-text="item.tag_name" class="max-w-40 truncate"></span>
+              </span>
+              <span class="hover-actions">
+                <button class="fav" @click.stop="toggleFavorite(item)" :data-title="t('tag.fav.remove')">★</button>
+                <button @click.stop="copyTagName(item.tag_name)" :data-title="t('tag.copy')">📋</button>
+                <button class="neg" @click.stop="addNegativeTag(item)" :data-title="t('tag.neg')">−</button>
+              </span>
             </span>
           </template>
           <div x-show="favorites.length === 0" class="w-full text-xs text-gray-400 px-2 py-1" x-text="t('fav.empty')">Нет избранных тегов</div>
@@ -171,7 +169,7 @@
               <span class="flex items-center gap-1.5">
                 <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                 <span x-text="t(cat.tkey || cat.name)"></span>
-                <span x-show="selectedCountInCategory(cat) > 0" class="ml-1 count-selected" x-text="'(' + selectedCountInCategory(cat) + ')'"></span>
+                <span class="ml-1 text-[10px]" :class="counterColorClass(selectedCountInCategory(cat))"><span x-show="selectedCountInCategory(cat) > 0" x-text="selectedCountInCategory(cat) + '/'"></span><span x-text="totalInCategory(cat)"></span></span>
               </span>
               <span x-text="constOpen[cat.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
             </button>
@@ -179,31 +177,41 @@
               <template x-if="cat.tags">
                 <div class="flex flex-wrap gap-1">
                   <template x-for="tag in cat.tags" :key="tag">
-                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="copyTagName(tag)">
-                      <span x-text="tag" class="max-w-40 truncate"></span>
-                      <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
-                      <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                    <span class="tag-pill-wrapper">
+                      <span class="tag-pill text-xs" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })">
+                        <span x-text="tag" class="max-w-40 truncate"></span>
+                      </span>
+                      <span class="hover-actions">
+                        <button class="fav" @click.stop="toggleFavorite({ tag_name: tag })" x-text="isFav(tag) ? '\u2605' : '\u2606'" :data-title="t('tag.fav.add')"></button>
+                        <button @click.stop="copyTagName(tag)" :data-title="t('tag.copy')">📋</button>
+                        <button class="neg" @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.subcat || cat.tkey?.split('.').pop() || cat.name })" :data-title="t('tag.neg')">−</button>
+                      </span>
                     </span>
                   </template>
                 </div>
               </template>
-              <template x-if="cat.subcategories">
+              <template x-if="cat.subcategories?.length">
                 <template x-for="sub in cat.subcategories" :key="sub.name">
       <div class="flex">
                     <button @click="constSubOpen[cat.name+'_'+sub.name] = !constSubOpen[cat.name+'_'+sub.name]" class="cursor-pointer w-full flex items-center justify-between px-2 py-0.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-dark-600 text-gray-500 dark:text-dark-400">
                       <span class="flex items-center gap-1">
                         <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                         <span x-text="sub.name"></span>
-                        <span x-show="selectedCountInSub(sub) > 0" class="ml-1 count-selected" x-text="'(' + selectedCountInSub(sub) + ')'"></span>
+                        <span class="ml-1 text-[10px]" :class="counterColorClass(selectedCountInSub(sub))"><span x-show="selectedCountInSub(sub) > 0" x-text="selectedCountInSub(sub) + '/'"></span><span x-text="totalInSub(sub)"></span></span>
                       </span>
                       <span x-text="constSubOpen[cat.name+'_'+sub.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
                     </button>
                     <div x-show="constSubOpen[cat.name+'_'+sub.name]" class="flex flex-wrap gap-1 px-2 py-1">
                       <template x-for="tag in sub.tags" :key="tag">
-                    <span class="tag-pill text-xs py-0.5 px-2" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="copyTagName(tag)">
-                          <span x-text="tag" class="max-w-40 truncate"></span>
-                          <button @click.stop="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })" class="btn btn-pos" :title="t('tag.pos')">+</button>
-                          <button @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                    <span class="tag-pill-wrapper">
+                          <span class="tag-pill text-xs" :class="selectedClass(tag)" @mouseenter="showTagImage($event, tag, true)" @mouseleave="hideTagImage()" @click="addTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })">
+                            <span x-text="tag" class="max-w-40 truncate"></span>
+                          </span>
+                          <span class="hover-actions">
+                            <button class="fav" @click.stop="toggleFavorite({ tag_name: tag })" x-text="isFav(tag) ? '\u2605' : '\u2606'" :data-title="t('tag.fav.add')"></button>
+                            <button @click.stop="copyTagName(tag)" :data-title="t('tag.copy')">📋</button>
+                            <button class="neg" @click.stop="addNegativeTag({ tag_name: tag, category_name: 'const', subcategory_name: cat.tkey?.split('.').pop() || sub.name })" :data-title="t('tag.neg')">−</button>
+                          </span>
                         </span>
                       </template>
                     </div>
@@ -221,18 +229,22 @@
               <div class="flex items-center gap-2 min-w-0">
                 <span x-show="getCategoryColor(cat)" class="tag-color-dot shrink-0" :style="{ '--dot-color': getCategoryColor(cat) }"></span>
                 <span x-text="tCat(cat.name)"></span>
-                <span class="text-[10px] font-normal" :class="selectedCountInTree(cat) > 0 ? 'count-selected' : 'text-gray-400 dark:text-dark-400'"><span x-show="selectedCountInTree(cat) > 0" x-text="selectedCountInTree(cat) + '/'"></span><span x-text="'('+cat.count+')'"></span></span>
+                <span class="text-[10px] font-normal" :class="counterColorClass(selectedCountInTree(cat))"><span x-show="selectedCountInTree(cat) > 0" x-text="selectedCountInTree(cat) + '/'"></span><span x-text="cat.count"></span></span>
               </div>
               <span x-text="treeOpen[cat.name] ? '\u25BC' : '\u25B6'" class="text-xs shrink-0"></span>
             </button>
             <div x-show="treeOpen[cat.name]">
               <div class="px-4 py-2 flex flex-wrap gap-1.5">
                 <template x-for="item in (cat._tags || [])" :key="item.id">
-                  <span class="tag-pill" :class="selectedClass(item.tag_name)" @mouseenter="showTagImage($event, item.tag_name)" @mouseleave="hideTagImage()" @click="copyTagName(item.tag_name)">
-                    <span x-text="item.tag_name" :title="item.aliases" class="max-w-60 truncate"></span>
-                    <button @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :title="t('tag.fav.add')" class="btn btn-fav"></button>
-                    <button @click.stop="addTag(item)" class="btn btn-pos" :title="t('tag.pos')">+</button>
-                    <button @click.stop="addNegativeTag(item)" class="btn btn-neg" :title="t('tag.neg')">-</button>
+                  <span class="tag-pill-wrapper">
+                    <span class="tag-pill" :class="selectedClass(item.tag_name)" @mouseenter="showTagImage($event, item.tag_name)" @mouseleave="hideTagImage()" @click="addTag(item)">
+                      <span x-text="item.tag_name" :title="item.aliases" class="max-w-60 truncate"></span>
+                    </span>
+                    <span class="hover-actions">
+                      <button class="fav" @click.stop="toggleFavorite(item)" x-text="isFav(item.tag_name) ? '\u2605' : '\u2606'" :data-title="t('tag.fav.add')"></button>
+                      <button @click.stop="copyTagName(item.tag_name)" :data-title="t('tag.copy')">📋</button>
+                      <button class="neg" @click.stop="addNegativeTag(item)" :data-title="t('tag.neg')">−</button>
+                    </span>
                   </span>
                 </template>
               </div>
@@ -357,7 +369,7 @@
               <span class="text-xs font-semibold" x-text="t('prompt.positive')">Позитивный</span>
               <button @click="copyPrompt('positive')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
             </div>
-            <textarea x-model="positivePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
+            <textarea :value="positivePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
           </div>
 
           <!-- Negative prompt -->
@@ -366,7 +378,7 @@
               <span class="text-xs font-semibold" x-text="t('prompt.negative')">Негативный</span>
               <button @click="copyPrompt('negative')" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" :title="t('prompt.copy')" x-text="t('prompt.copy')">📋</button>
             </div>
-            <textarea x-model="negativePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
+            <textarea :value="negativePrompt" readonly class="w-full border rounded p-2 text-xs bg-white dark:bg-dark-600 border-gray-300 dark:border-dark-500 resize-none font-mono" style="height:180px"></textarea>
           </div>
         </div>
       </div>
@@ -400,7 +412,7 @@
                   <div class="flex flex-wrap gap-3 justify-center">
                     <template x-for="ch in [...positiveChips, ...negativeChips].filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)" :key="ch.name">
                       <div class="flex flex-col items-center gap-1" x-data="{ err: false }" x-show="!err">
-                        <img loading="lazy" :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
+                        <img loading="lazy" :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" :alt="ch.name" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
                         <span class="text-[10px] text-gray-500 truncate max-w-32 text-center" x-text="ch.name"></span>
                       </div>
                     </template>
@@ -534,7 +546,7 @@
                 <div class="flex flex-wrap gap-3 justify-center">
                   <template x-for="ch in [...positiveChips, ...negativeChips].filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)" :key="ch.name">
                     <div class="flex flex-col items-center gap-1" x-data="{ err: false }" x-show="!err">
-                      <img loading="lazy" :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
+                      <img loading="lazy" :src="ch.category === 'const' ? '/api/static/image?tag='+encodeURIComponent(ch.name) : '/api/tags/image?pack_id='+selectedPackId+'&tag='+encodeURIComponent(ch.name)" :alt="ch.name" @load="err = $event.target.naturalWidth <= 1" @error="err=true" style="width:150px;height:150px;object-fit:contain" class="rounded border border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600">
                       <span class="text-[10px] text-gray-500 truncate max-w-32 text-center" x-text="ch.name"></span>
                     </div>
                   </template>
@@ -561,31 +573,33 @@
         <div class="preview-panel shrink-0" :style="{ width: rightWidth + 'px' }">
           <div class="preview-tabs">
             <button class="preview-tab" :class="{ active: previewTab === 'images' }" @click="previewTab = 'images'" x-text="t('preview.title')">Прошлые генерации</button>
-            <button class="preview-tab" :class="{ active: previewTab === 'history' }" @click="previewTab = 'history'" x-text="t('drawer.title.history')">История</button>
           </div>
 
           <div x-show="previewTab === 'images'" class="overflow-y-auto flex-1 p-2 flex flex-wrap gap-2" style="align-content: flex-start;">
-            <template x-for="(imgUrl, idx) in generationHistory" :key="imgUrl">
-              <div class="shrink-0 overflow-hidden rounded border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors" style="width:120px;height:120px" @click="openViewer(idx)">
-                <img :src="imgUrl" alt="" style="object-fit:cover;object-position:center top;width:100%;height:100%">
+            <template x-for="item in paginatedItems()" :key="item.url">
+              <div x-data="{ hovered: false }" @mouseenter="hovered = true" @mouseleave="hovered = false" class="shrink-0 overflow-hidden rounded border border-gray-300 dark:border-dark-500 cursor-pointer transition-colors relative" style="width:120px;height:120px" @click="openViewer(item.idx)">
+                <img :src="item.url" alt="" style="object-fit:cover;object-position:center top;width:100%;height:100%">
+                <button x-show="hovered" @click.stop="restoreFromGenerationHistory(item.idx)" style="position:absolute;top:4px;right:4px;width:24px;height:24px" class="flex items-center justify-center rounded bg-black/40 hover:bg-black/60">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></polyline></svg>
+                </button>
               </div>
             </template>
             <div x-show="generationHistory.length === 0" class="w-full flex items-center justify-center text-gray-400 dark:text-dark-400 text-xs py-8">
               <span x-text="t('preview.placeholder')">Нажмите Сгенерировать</span>
             </div>
-          </div>
-
-          <div x-show="previewTab === 'history'" class="overflow-y-auto flex-1 p-2 space-y-2">
-            <template x-for="p in history" :key="p.id">
-              <div class="p-2 border rounded border-gray-300 dark:border-dark-500 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-600 flex items-start gap-2">
-                <div class="flex-1 min-w-0" @click="loadPrompt(p)">
-                  <div x-text="p.name || t('drawer.prompt.unnamed')" class="font-medium text-xs"></div>
-                  <div class="text-[10px] text-gray-400 truncate" x-text="promptPreview(p.positive_text)"></div>
-                </div>
-                <button @click.stop="deleteHistoryItem(p.id)" class="shrink-0 px-1 py-0.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors" :title="t('actions.delete')">&times;</button>
-              </div>
-            </template>
-            <div x-show="history.length === 0" class="w-full flex items-center justify-center text-gray-400 dark:text-dark-400 text-xs py-8" x-text="t('drawer.history.empty')">История пуста</div>
+            <div x-show="generationHistory.length > 0" class="paginator w-full" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 0 4px;width:100%">
+              <select x-model="previewPerPage" @change="previewPage = 1" style="font-size:11px;padding:2px 4px;border-radius:4px;border:1px solid var(--c-border);background:var(--c-bg-white);color:var(--c-text-500)">
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="75">75</option>
+                <option value="100">100</option>
+              </select>
+              <span style="font-size:11px;color:var(--c-text-500)">
+                <span x-text="previewPage"></span>/<span x-text="totalPages()"></span>
+              </span>
+              <button @click="prevPreviewPage()" :disabled="previewPage <= 1" style="font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--c-border);background:var(--c-bg-white);color:var(--c-text-500);cursor:pointer" :style="previewPage <= 1 ? 'opacity:0.3;cursor:default' : ''">&lsaquo;</button>
+              <button @click="nextPreviewPage()" :disabled="previewPage >= totalPages()" style="font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--c-border);background:var(--c-bg-white);color:var(--c-text-500);cursor:pointer" :style="previewPage >= totalPages() ? 'opacity:0.3;cursor:default' : ''">&rsaquo;</button>
+            </div>
           </div>
 
           <div x-show="generating" class="preview-progress">
@@ -605,10 +619,19 @@
       <span>✕</span>
       <span x-text="t('preview.viewer.close')">Закрыть</span>
     </button>
+    <button @click="restoreFromCurrentImage()" style="position:absolute;top:12px;right:90px" class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-black/40 hover:bg-black/60 text-white text-sm cursor-pointer" title="Восстановить">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></polyline></svg>
+      <span>Восстановить</span>
+    </button>
     <button @click="prevImage()" x-show="generationHistory.length > 1" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:48px;height:48px" class="flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl cursor-pointer">‹</button>
     <button @click="nextImage()" x-show="generationHistory.length > 1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:48px;height:48px" class="flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl cursor-pointer">›</button>
     <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-size:14px" class="bg-black/40 px-3 py-1 rounded select-none" x-text="(viewerIndex + 1) + ' / ' + generationHistory.length"></div>
-    <img :src="viewerImage" style="max-width:95vw;max-height:90vh;object-fit:contain" class="select-none" @keydown.escape.window="closeViewer()">
+    <div x-show="restoreWarnings.length > 0" style="position:absolute;bottom:50px;left:50%;transform:translateX(-50%)" class="bg-red-900/80 text-red-200 text-xs px-4 py-2 rounded select-none flex flex-col gap-1">
+      <template x-for="w in restoreWarnings" :key="w.field">
+        <div><span class="font-semibold" x-text="w.field"></span>: <span x-text="w.value"></span> <span class="text-red-300">(не найдено)</span></div>
+      </template>
+    </div>
+    <img :src="viewerImage" alt="Preview" style="max-width:95vw;max-height:90vh;object-fit:contain" class="select-none">
   </div>
 
   <!-- Tree loading modal -->
@@ -625,7 +648,7 @@
 
   <!-- Tag image preview -->
   <div x-show="tagImage" class="fixed z-50 pointer-events-none" :style="'left: ' + tagImagePos.x + 'px; top: ' + tagImagePos.y + 'px'">
-    <img loading="lazy" :src="tagImage" class="max-w-60 max-h-60 rounded shadow-xl border border-gray-300 dark:border-dark-500">
+    <img loading="lazy" :src="tagImage" alt="" class="max-w-60 max-h-60 rounded shadow-xl border border-gray-300 dark:border-dark-500">
   </div>
 
   <div x-show="toastVisible" class="toast">

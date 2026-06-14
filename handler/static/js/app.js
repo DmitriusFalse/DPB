@@ -2,8 +2,10 @@ const BLOCK_IDS = { 'quality': 1, 'sources': 2, 'rating': 3, 'appearance': 4, 'p
 const BLOCK_COLORS = [null, '#60cdff', '#87b6ff', '#aa7be0', '#d48ebd', '#6ccb6c', '#e8b84a', '#f59a44'];
 
 function app() {
+  let _tagImgId = 0;
   return {
-    pwaInstallable: pwaInstallable,
+    pwaInstallable: false,
+    _pwaDeferredPrompt: null,
 
     // Theme: 'auto', 'dark', 'light'
     theme: localStorage.getItem('theme') || 'auto',
@@ -128,8 +130,6 @@ function app() {
 
     // ComfyUI
     comfyEnabled: false,
-    comfyAddress: 'http://127.0.0.1:8188',
-    savePath: '',
     resolutions: [],
     activeTab: 'tags',
     promptsOpen: false,
@@ -149,6 +149,8 @@ function app() {
     generationStatus: '',
     generationResult: null,
     generationHistory: [],
+    previewPerPage: 25,
+    previewPage: 1,
     viewerImage: null,
     viewerIndex: -1,
     _genDataLoaded: false,
@@ -158,7 +160,7 @@ function app() {
     tagToCategory: {},
 
     // Layout
-    leftRatio: parseInt(localStorage.getItem('layout_left') || '50'),
+    leftRatio: parseInt(localStorage.getItem('layout_left') || '20'),
     rightWidth: parseInt(localStorage.getItem('layout_right') || '400'),
     workNoComfyRatio: parseInt(localStorage.getItem('layout_work_nc') || '75'),
     workComfyRatio: parseInt(localStorage.getItem('layout_work_c') || '30'),
@@ -173,6 +175,7 @@ function app() {
     negativeChips: [],
     dragState: null,
     dropTarget: null,
+    _ignoreNextClick: false,
 
     // Custom input
     customTag: '',
@@ -182,8 +185,8 @@ function app() {
 
     // Preview panel
     previewTab: 'images',
-    history: [],
     favoritePrompts: [],
+    restoreWarnings: [],
 
     // ─── Init ───
 
@@ -193,7 +196,9 @@ function app() {
       await this.loadConstants();
       this.assignColors();
       await this.loadPacks();
-      document.addEventListener('pwa-installable', () => {
+      document.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        this._pwaDeferredPrompt = e;
         this.pwaInstallable = true;
       });
       try {
@@ -202,6 +207,20 @@ function app() {
       } catch(e) {}
       await this.loadComfyConfig();
       this.loadGenerationHistory();
+      window.addEventListener('pageshow', (e) => {
+        if (e.persisted) this.loadGenerationHistory();
+      });
+    },
+
+    // ─── PWA ───
+
+    installPwa() {
+      if (!this._pwaDeferredPrompt) return;
+      this._pwaDeferredPrompt.prompt();
+      this._pwaDeferredPrompt.userChoice.then(() => {
+        this._pwaDeferredPrompt = null;
+        this.pwaInstallable = false;
+      });
     },
 
     // ─── Packs ───
@@ -381,6 +400,7 @@ function app() {
     },
 
     removeChip(type, name) {
+      if (this._ignoreNextClick) { this._ignoreNextClick = false; return; }
       const arr = type === 'positive' ? this.positiveChips : this.negativeChips;
       const idx = arr.findIndex(c => c.name === name);
       if (idx !== -1) arr.splice(idx, 1);
@@ -471,6 +491,7 @@ function app() {
     onDrop(ev, targetType) {
       ev.preventDefault();
       this._clearDropVisuals();
+      this._ignoreNextClick = true;
       const name = this.dragState?.name;
       if (!name) return;
       const allChips = [...this.positiveChips, ...this.negativeChips];
@@ -633,6 +654,25 @@ function app() {
       return count;
     },
 
+    counterColorClass(count) {
+      if (count === 0) return 'text-gray-400 dark:text-dark-400';
+      return 'text-yellow-500 dark:text-yellow-500 font-semibold';
+    },
+
+    totalInCategory(cat) {
+      let total = cat.tags ? cat.tags.length : 0;
+      if (cat.subcategories) {
+        for (const sub of cat.subcategories) {
+          total += sub.tags ? sub.tags.length : 0;
+        }
+      }
+      return total;
+    },
+
+    totalInSub(sub) {
+      return sub.tags ? sub.tags.length : 0;
+    },
+
     updateChipNames() {
       const p = {}, n = {};
       for (const c of this.positiveChips) p[c.name] = true;
@@ -760,19 +800,41 @@ function app() {
       return parts;
     },
 
+    saveGenerationHistory() {
+      try {
+        localStorage.setItem('generation_history', JSON.stringify(this.generationHistory));
+      } catch(_) {}
+    },
+
+    loadGenerationHistory() {
+      try {
+        const raw = localStorage.getItem('generation_history');
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) this.generationHistory = arr;
+        }
+      } catch(_) {}
+    },
+
+    paginatedItems() {
+      const start = (this.previewPage - 1) * this.previewPerPage;
+      return this.generationHistory.slice(start, start + this.previewPerPage).map((url, i) => ({ url, idx: start + i }));
+    },
+
+    totalPages() {
+      return Math.max(1, Math.ceil(this.generationHistory.length / this.previewPerPage));
+    },
+
+    prevPreviewPage() {
+      if (this.previewPage > 1) this.previewPage--;
+    },
+
+    nextPreviewPage() {
+      if (this.previewPage < this.totalPages()) this.previewPage++;
+    },
+
     // ─── Prompt actions ───
 
-
-
-    async loadHistory() {
-      try {
-        const res = await fetch('/api/prompts?favorites=0');
-        if (!res.ok) { console.error('loadHistory status:', res.status); return; }
-        this.history = await res.json();
-      } catch (e) {
-        console.error('loadHistory:', e);
-      }
-    },
 
     async loadFavoritePrompts() {
       try {
@@ -813,71 +875,26 @@ function app() {
       }
     },
 
-    async loadPrompt(p) {
-      this.positiveChips.splice(0);
-      this.negativeChips.splice(0);
-      const posParser = parsePromptData(p.positive_text);
-      for (const n of posParser) {
-        const ch = { name: n, category: 'meta', subcategory: 'loaded', block_id: this.resolveBlockIdByName(n) };
-        if (!this.positiveChips.some(c => c.name === n)) {
-          this.positiveChips.push(ch);
-        }
-      }
-      const negParser = parsePromptData(p.negative_text);
-      for (const n of negParser) {
-        const ch = { name: n, category: 'meta', subcategory: 'loaded', block_id: this.resolveBlockIdByName(n) };
-        if (!this.negativeChips.some(c => c.name === n)) {
-          this.negativeChips.push(ch);
-        }
-      }
-      // Restore generation settings if available
-      if (p.gen_data) {
-        try {
-          const g = JSON.parse(p.gen_data);
-          if (g.workflow) this.selectedWorkflow = g.workflow;
-          if (g.checkpoint) this.selectedCheckpoint = g.checkpoint;
-          if (g.resolution) this.selectedResolution = g.resolution;
-          if (g.sampler) this.selectedSampler = g.sampler;
-          if (g.scheduler) this.selectedScheduler = g.scheduler;
-          if (g.steps) this.steps = g.steps;
-          if (g.cfg) this.cfg = g.cfg;
-          if (g.seed !== undefined) { this.seed = g.seed; this.seedFixed = true; }
-        } catch(_) {}
-      }
-      this.activeTab = 'generation';
-      this.enrichChips();
-      this.updateChipNames();
-      this.autoSavePrompt();
-    },
-
-    async deleteHistoryItem(id) {
-      try {
-        await fetch('/api/prompts?id=' + id, { method: 'DELETE' });
-        this.loadHistory();
-      } catch(_) {}
-    },
-
     // ─── Tag image preview ───
 
     tagImage: null,
     tagImagePos: {},
-    _tagImgId: 0,
 
     showTagImage(event, tagName, isStatic = false) {
       if (!isStatic && !this.selectedPackId) return;
-      this._tagImgId++;
-      const myId = this._tagImgId;
+      _tagImgId++;
+      const myId = _tagImgId;
       const el = event.currentTarget;
       const img = new Image();
       img.onload = () => {
-        if (myId !== this._tagImgId) return;
+        if (myId !== _tagImgId) return;
         if (img.naturalWidth <= 1) return;
         this.tagImage = img.src;
         const r = el.getBoundingClientRect();
         this.tagImagePos = { x: r.left, y: r.bottom + 4 };
       };
       img.onerror = () => {
-        if (myId !== this._tagImgId) return;
+        if (myId !== _tagImgId) return;
         this.tagImage = null;
       };
       if (isStatic) {
@@ -942,6 +959,28 @@ function app() {
           }
         }
       } catch (_) {}
+      if (!localStorage.getItem('first_launch_done')) {
+        localStorage.setItem('first_launch_done', '1');
+        const data = this.presetData?.['Quality Only'];
+        if (data) {
+          for (const n of data.positive) {
+            if (n === 'BREAK') continue;
+            const ch = { name: n, category: 'meta', subcategory: 'quality', block_id: this.resolveBlockIdByName(n) };
+            if (!this.positiveChips.some(c => c.name === n)) {
+              this.positiveChips.push(ch);
+            }
+          }
+          for (const n of data.negative) {
+            const ch = { name: n, category: 'meta', subcategory: 'quality', block_id: 4 };
+            if (!this.negativeChips.some(c => c.name === n)) {
+              this.negativeChips.push(ch);
+            }
+          }
+          this.enrichChips();
+          this.updateChipNames();
+          this.autoSavePrompt();
+        }
+      }
     },
 
     // ─── ComfyUI ───
@@ -951,9 +990,8 @@ function app() {
         const r = await fetch('/api/config');
         if (!r.ok) return;
         const c = await r.json();
+        this._config = c;
         this.comfyEnabled = c.comfy_enabled;
-        this.comfyAddress = c.comfy_address || 'http://127.0.0.1:8188';
-        this.savePath = c.save_path || '';
         this.resolutions = (c.resolutions || 'Square 1:1#512x512').split('\n').map(s => s.trim()).filter(s => s.length > 0).map(s => {
           const parts = s.split('#');
           return parts.length === 2 ? { name: parts[0], dims: parts[1] } : { name: s, dims: s };
@@ -968,7 +1006,7 @@ function app() {
         if (!r.ok) return;
         this.workflows = await r.json();
         if (this.workflows.length > 0) this.selectedWorkflow = this.workflows[0].name;
-      } catch(_) {}
+      } catch(e) { console.error('loadWorkflows:', e); }
     },
 
     async loadCheckpoints() {
@@ -981,7 +1019,7 @@ function app() {
           this.checkpoints = ckpts;
           if (ckpts.length > 0) this.selectedCheckpoint = ckpts[0];
         }
-      } catch(_) {}
+      } catch(e) { console.error('loadCheckpoints:', e); }
     },
 
     async loadSamplers() {
@@ -993,7 +1031,7 @@ function app() {
         if (samplerList) { this.samplers = samplerList; this.selectedSampler = samplerList[0] || 'euler'; }
         const schedList = data?.KSampler?.input?.required?.scheduler?.[0];
         if (schedList) { this.schedulers = schedList; this.selectedScheduler = schedList[0] || 'normal'; }
-      } catch(_) {}
+      } catch(e) { console.error('loadSamplers:', e); }
     },
 
     async loadGenerationData() {
@@ -1009,6 +1047,19 @@ function app() {
     async refreshGenerationData() {
       this._genDataLoaded = false;
       await this.loadGenerationData();
+    },
+
+    async toggleComfy() {
+      if (this._config) {
+        this._config.comfy_enabled = this.comfyEnabled;
+        try {
+          await fetch('/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this._config)
+          });
+        } catch(e) { console.error('toggleComfy:', e); }
+      }
     },
 
     async loadNodeTitles() {
@@ -1038,32 +1089,6 @@ function app() {
       if (!this.seedFixed) {
         this.seed = Math.floor(Math.random() * 2147483647);
       }
-
-      // Auto-save prompt to history
-      try {
-        const now = new Date();
-        const ts = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-        await fetch('/api/prompts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: this.seed + ' - ' + ts,
-            positive_text: this.positivePrompt,
-            negative_text: this.negativePrompt,
-            gen_data: JSON.stringify({
-              workflow: this.selectedWorkflow,
-              checkpoint: this.selectedCheckpoint,
-              resolution: this.selectedResolution,
-              sampler: this.selectedSampler,
-              scheduler: this.selectedScheduler,
-              steps: this.steps,
-              cfg: this.cfg,
-              seed: this.seed
-            })
-          })
-        });
-        this.loadHistory();
-      } catch(_) {}
 
       const clientId = crypto.randomUUID();
       const parts = this.selectedResolution.split('x');
@@ -1130,7 +1155,7 @@ function app() {
             const url = '/api/comfy/image?' + params.toString();
             this.generationResult = url;
             this.generationHistory.unshift(url);
-            if (this.generationHistory.length > 50) this.generationHistory.length = 50;
+            if (this.generationHistory.length > 1000) this.generationHistory.length = 1000;
             this.saveGenerationHistory();
             this.generationProgress = 100;
             this.generationStatus = this.t('comfy.result') || 'Done';
@@ -1217,7 +1242,6 @@ function app() {
       await this.loadTree();
       this.assignColors();
       this.loadFavorites();
-      this.loadHistory();
       this.loadFavoritePrompts();
       this.loadAutoSave();
       this.enrichChips();
@@ -1291,12 +1315,6 @@ function app() {
         }));
       } catch(_) {}
     },
-    loadGenerationHistory() {
-      try { this.generationHistory = JSON.parse(localStorage.getItem('gen_history') || '[]'); } catch(_) {}
-    },
-    saveGenerationHistory() {
-      try { localStorage.setItem('gen_history', JSON.stringify(this.generationHistory)); } catch(_) {}
-    },
 
     // ─── Viewer ───
     openViewer(index) {
@@ -1318,14 +1336,82 @@ function app() {
       this.viewerIndex = (this.viewerIndex + 1) % this.generationHistory.length;
       this.viewerImage = this.generationHistory[this.viewerIndex];
     },
-  };
-}
 
-function promptPreview(text) {
-  if (!text) return '';
-  const parts = text.split('BREAK').map(s => s.trim()).filter(s => s.length > 0);
-  const result = parts.join(' | ');
-  return result.substring(0, 100) + (result.length > 100 ? '...' : '');
+    async restoreFromGenerationHistory(idx) {
+      if (idx < 0 || idx >= this.generationHistory.length) return;
+      const url = this.generationHistory[idx];
+      const qs = url.split('?')[1];
+      if (!qs) return;
+      try {
+        const r = await fetch('/api/comfy/prompt-info?' + qs);
+        if (!r.ok) return;
+        const data = await r.json();
+        this.restoreFromWorkflow(data.prompt);
+      } catch(e) { console.error('restoreFromHistory:', e); }
+    },
+
+    async restoreFromCurrentImage() {
+      if (!this.viewerImage) return;
+      const qs = this.viewerImage.split('?')[1];
+      if (!qs) return;
+      try {
+        const r = await fetch('/api/comfy/prompt-info?' + qs);
+        if (!r.ok) return;
+        const data = await r.json();
+        this.restoreFromWorkflow(data.prompt);
+      } catch(e) { console.error('restore:', e); }
+    },
+
+    async restoreFromWorkflow(wf) {
+      this.restoreWarnings = [];
+      const makeWarning = (field, value) => {
+        if (!this.restoreWarnings.some(w => w.field === field)) {
+          this.restoreWarnings.push({ field, value });
+        }
+      };
+      for (const node of Object.values(wf)) {
+        if (node.class_type === 'CLIPTextEncode') {
+          const text = node.inputs?.text;
+          if (!text) continue;
+          const title = node._meta?.title || '';
+          const chips = (title.toLowerCase().includes('positive') || this.positiveChips.length === 0)
+            ? 'positiveChips' : 'negativeChips';
+          const arr = this[chips];
+          arr.splice(0);
+          for (const n of parsePromptData(text)) {
+            if (!arr.some(c => c.name === n)) {
+              arr.push({ name: n, category: 'meta', subcategory: 'restored', block_id: this.resolveBlockIdByName(n) });
+            }
+          }
+        } else if (node.class_type === 'KSampler') {
+          const inp = node.inputs || {};
+          if (inp.steps !== undefined) this.steps = inp.steps;
+          if (inp.cfg !== undefined) this.cfg = inp.cfg;
+          if (inp.seed !== undefined) { this.seed = inp.seed; this.seedFixed = true; }
+          if (inp.sampler_name && !this.samplers.includes(inp.sampler_name)) {
+            makeWarning('sampler_name', inp.sampler_name);
+          }
+          if (inp.sampler_name) this.selectedSampler = inp.sampler_name;
+          if (inp.scheduler && !this.schedulers.includes(inp.scheduler)) {
+            makeWarning('scheduler', inp.scheduler);
+          }
+          if (inp.scheduler) this.selectedScheduler = inp.scheduler;
+        } else if (node.class_type === 'CheckpointLoaderSimple') {
+          const ckptName = node.inputs?.ckpt_name;
+          if (ckptName) {
+            if (!this.checkpoints.includes(ckptName)) {
+              makeWarning('checkpoint', ckptName);
+            }
+            this.selectedCheckpoint = ckptName;
+          }
+        }
+      }
+      this.enrichChips();
+      this.updateChipNames();
+      this.autoSavePrompt();
+      this.activeTab = 'generation';
+    },
+  };
 }
 
 function parsePromptData(text) {

@@ -18,7 +18,7 @@ mux.HandleFunc("/api/version", func(w http.ResponseWriter, r *http.Request) {
 })
 ```
 
-**Зависимости:** `github.com/getlantern/systray`, `github.com/mattn/go-sqlite3`, `github.com/gorilla/websocket`
+**Зависимости:** `github.com/mattn/go-sqlite3`, `github.com/gorilla/websocket`, `github.com/webview/webview_go`
 
 ---
 
@@ -57,20 +57,6 @@ mux.HandleFunc("/api/version", func(w http.ResponseWriter, r *http.Request) {
 - Файл: `app-YYYY-MM-DD.log` в указанной папке
 - Вывод: одновременно в файл и stderr
 - Формат: `[HH:MM:SS.mmm] LEVEL message`
-
----
-
-## tray (`tray/tray.go`)
-
-Системный трей на базе `getlantern/systray`.
-
-**Меню:**
-- Открыть → `http://127.0.0.1:{port}`
-- Папка наборов → `explorer {PacksPath}`
-- Настройки → `http://127.0.0.1:{port}/settings`
-- Выход → `systray.Quit()`
-
-**OpenBrowser** — `rundll32 url.dll,FileProtocolHandler {url}`
 
 ---
 

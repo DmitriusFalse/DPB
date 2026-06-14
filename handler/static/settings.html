@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e293b">
   <title x-text="t('settings.title')">Настройки — Danbooru Prompt Builder</title>
   <link rel="icon" type="image/x-icon" href="/static/icon.ico">
   <link rel="stylesheet" href="/static/styles.css">
@@ -169,6 +170,18 @@
       </div>
     </section>
 
+    <!-- Restore History -->
+    <section>
+      <h2 class="text-lg font-semibold mb-3" x-text="t('comfy.restore_history')">Восстановить историю</h2>
+      <div class="border border-gray-200 dark:border-dark-600 rounded-lg p-4">
+        <p class="text-xs text-gray-500 dark:text-dark-400 mb-3" x-text="t('comfy.restore_history_hint')">Сканирует папку сохранения на наличие PNG с метаданными генерации</p>
+        <div class="flex items-center gap-3">
+          <button @click="restoreHistory()" :disabled="restoring" class="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50" x-text="restoring ? t('comfy.restoring') : t('comfy.restore_history_btn')">Сканировать</button>
+          <span x-show="restoreMsg" x-text="restoreMsg" class="text-sm" :class="restoreOk ? 'text-green-600' : 'text-red-600'"></span>
+        </div>
+      </div>
+    </section>
+
     <div class="flex items-center gap-3 mt-3">
       <button @click="saveConfig()" class="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700" x-text="t('settings.save')">Сохранить</button>
       <span x-show="saveMsg" x-text="saveMsg" class="text-sm" :class="saveOk ? 'text-green-600' : 'text-red-600'"></span>
@@ -206,6 +219,9 @@
         packs: [],
         saveMsg: '',
         saveOk: false,
+        restoring: false,
+        restoreMsg: '',
+        restoreOk: false,
 
         async init() {
           this.loadTranslations();
@@ -272,6 +288,29 @@
             this.saveOk = false;
           }
           setTimeout(() => this.saveMsg = '', 5000);
+        },
+
+        async restoreHistory() {
+          this.restoring = true;
+          this.restoreMsg = '';
+          this.restoreOk = false;
+          try {
+            const res = await fetch('/api/comfy/scan-history', { method: 'POST' });
+            if (!res.ok) { this.restoreMsg = 'Error: ' + res.status; return; }
+            const data = await res.json();
+            const files = data.files || [];
+            if (files.length === 0) {
+              this.restoreMsg = this.t('comfy.restore_history_empty') || 'PNG с метаданными не найдены';
+              return;
+            }
+            const urls = files.map(f => '/api/comfy/image?filename=' + encodeURIComponent(f) + '&subfolder=&type=output');
+            localStorage.setItem('generation_history', JSON.stringify(urls));
+            this.restoreMsg = (this.t('comfy.restore_history_done') || 'Добавлено {n} изображений').replace('{n}', urls.length);
+            this.restoreOk = true;
+          } catch(e) {
+            this.restoreMsg = e.message;
+          }
+          this.restoring = false;
         }
       };
     }

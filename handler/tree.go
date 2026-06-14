@@ -59,7 +59,7 @@ func handleTree(repo *database.Repo) http.HandlerFunc {
 				limit = 500
 			}
 
-			tags, total, err := repo.GetTagsByCategory(packID, catName, catName, offset, limit)
+			tags, total, err := repo.GetTagsByCategory(packID, catName, offset, limit)
 			if err != nil {
 				jsonError(w, err.Error(), http.StatusInternalServerError)
 				return

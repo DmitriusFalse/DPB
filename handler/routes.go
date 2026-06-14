@@ -19,6 +19,10 @@ func RegisterRoutes(mux *http.ServeMux, db *sql.DB, cfg *config.Config, syncSvc 
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/static/icon.ico", http.StatusMovedPermanently)
 	})
+	mux.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Service-Worker-Allowed", "/")
+		serveEmbedded(w, r, "/sw.js")
+	})
 	mux.HandleFunc("/", handleIndex())
 	mux.HandleFunc("/settings", handleSettingsPage())
 
@@ -43,5 +47,7 @@ func RegisterRoutes(mux *http.ServeMux, db *sql.DB, cfg *config.Config, syncSvc 
 	mux.HandleFunc("/api/comfy/image", api(handleComfyImage(cfg)))
 	mux.HandleFunc("/api/comfy/object_info/", api(handleComfyObjectInfo(cfg)))
 	mux.HandleFunc("/api/comfy/save-image", api(handleComfySaveImage(cfg)))
+	mux.HandleFunc("/api/comfy/prompt-info", api(handleComfyPromptInfo(cfg)))
+	mux.HandleFunc("/api/comfy/scan-history", api(handleComfyScanHistory(cfg)))
 	mux.HandleFunc("/api/comfy/ws", api(handleComfyWS(cfg)))
 }

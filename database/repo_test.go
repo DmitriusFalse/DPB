@@ -246,15 +246,7 @@ func TestTags_CategoryTree(t *testing.T) {
 		t.Fatalf("got %d categories, want 2", len(cats))
 	}
 
-	subs, err := repo.GetSubcategories(p.ID, "general")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(subs) != 1 || subs[0] != "appearance" {
-		t.Errorf("subs = %v", subs)
-	}
-
-	tags, total, err := repo.GetTagsByCategory(p.ID, "general", "appearance", 0, 100)
+	tags, total, err := repo.GetTagsByCategory(p.ID, "general", 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -417,13 +409,13 @@ func TestPresets_DefaultSeed(t *testing.T) {
 	presets, _ := repo.GetPresets()
 	found := false
 	for _, p := range presets {
-		if p.Name == "Pony Quality" {
+		if p.Name == "Quality Only" {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Error("Pony Quality preset not seeded")
+		t.Error("Quality Only preset not seeded")
 	}
 }
 

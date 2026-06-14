@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"danbooru-prompt-builder/database"
 )
@@ -37,6 +38,10 @@ func handleFavorites(repo *database.Repo) http.HandlerFunc {
 			}
 			if body.PackID > 0 {
 				packID = body.PackID
+			}
+			if strings.TrimSpace(body.TagName) == "" {
+				jsonError(w, "tag_name is required", http.StatusBadRequest)
+				return
 			}
 
 			var err error

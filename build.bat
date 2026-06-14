@@ -20,26 +20,10 @@ set CGO_ENABLED=1
 set BUILD_DIR=build
 if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 
-echo [1/4] Downloading dependencies...
+echo [1/2] Downloading dependencies...
 call go mod download
 if %errorlevel% neq 0 (
     echo Error downloading dependencies
-    pause
-    exit /b 1
-)
-
-echo [2/4] Installing rsrc for icon embedding...
-go install github.com/akavel/rsrc@latest
-if %errorlevel% neq 0 (
-    echo Error installing rsrc
-    pause
-    exit /b 1
-)
-
-echo [3/4] Generating icon resources...
-rsrc -ico tray\icon.ico -o rsrc.syso
-if %errorlevel% neq 0 (
-    echo Error generating resources
     pause
     exit /b 1
 )
@@ -57,19 +41,16 @@ if exist "%VERSION_FILE%" (
     >"%VERSION_FILE%" echo !MAJOR!.!MINOR!.!BUILD!
 )
 
-echo [4/4] Building binary...
+echo [2/2] Building binary...
 :: -s -w: strip debug info
 :: -H=windowsgui: hide console window
 :: -trimpath: remove build paths
 go build -ldflags="-s -w -H=windowsgui" -trimpath -o "%BUILD_DIR%\DanbooruPromptBuilder.exe"
 if %errorlevel% neq 0 (
     echo Build failed
-    del rsrc.syso 2>nul
     pause
     exit /b 1
 )
-
-del rsrc.syso
 
 :: Copy config alongside the binary
 copy /Y config.json "%BUILD_DIR%\config.json" >nul

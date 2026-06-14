@@ -46,12 +46,12 @@ func TestInit_SeedsDefaultPreset(t *testing.T) {
 	defer cleanup()
 
 	var count int
-	err := db.QueryRow(`SELECT COUNT(*) FROM tag_presets WHERE name='Pony Quality'`).Scan(&count)
+	err := db.QueryRow(`SELECT COUNT(*) FROM tag_presets WHERE name='Quality Only'`).Scan(&count)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if count == 0 {
-		t.Error("Pony Quality preset not seeded")
+		t.Error("Quality Only preset not seeded")
 	}
 }
 

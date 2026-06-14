@@ -2,22 +2,34 @@ package handler
 
 import (
 	"bytes"
+	"context"
+	"encoding/binary"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 
 	"danbooru-prompt-builder/config"
 )
 
+func validPathComponent(name string) bool {
+	return name != "" && !strings.Contains(name, "..") && !strings.Contains(name, "/") && !strings.Contains(name, "\\")
+}
+
 func handleComfyWorkflows(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if name := r.URL.Query().Get("name"); name != "" {
+			if !validPathComponent(name) {
+				jsonError(w, "invalid workflow name", http.StatusBadRequest)
+				return
+			}
 			wfPath := filepath.Join(cfg.WorkflowsPath, name+".json")
 			data, err := os.ReadFile(wfPath)
 			if err != nil {
@@ -64,6 +76,10 @@ func handleComfyGenerate(cfg *config.Config) http.HandlerFunc {
 		}
 		if req.Workflow == "" || req.Macros == nil {
 			jsonError(w, "workflow and macros required", http.StatusBadRequest)
+			return
+		}
+		if !validPathComponent(req.Workflow) {
+			jsonError(w, "invalid workflow name", http.StatusBadRequest)
 			return
 		}
 		wfPath := filepath.Join(cfg.WorkflowsPath, req.Workflow+".json")
@@ -119,27 +135,124 @@ func handleComfyGenerate(cfg *config.Config) http.HandlerFunc {
 func handleComfyImage(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filename := r.URL.Query().Get("filename")
-		subfolder := r.URL.Query().Get("subfolder")
-		imgType := r.URL.Query().Get("type")
-		if filename == "" {
-			jsonError(w, "filename required", http.StatusBadRequest)
+		if filename == "" || !validPathComponent(filename) {
+			w.Header().Set("Content-Type", "image/gif")
+			w.Write(transparentGIF)
 			return
 		}
-		comfyAddr := cfg.ComfyAddress
-		viewURL := comfyAddr + "/view?filename=" + filename
-		if subfolder != "" {
+
+		if cfg.SavePath != "" {
+			localPath := filepath.Join(cfg.SavePath, filename)
+			if f, err := os.Open(localPath); err == nil {
+				defer f.Close()
+				stat, err := f.Stat()
+				if err == nil && stat.Size() > 0 {
+					w.Header().Set("Content-Type", "image/png")
+					w.Header().Set("Cache-Control", "max-age=86400")
+					http.ServeContent(w, r, filename, stat.ModTime(), f)
+					return
+				}
+			}
+		}
+
+		viewURL := cfg.ComfyAddress + "/view?filename=" + url.QueryEscape(filename)
+		if subfolder := r.URL.Query().Get("subfolder"); subfolder != "" {
 			viewURL += "&subfolder=" + subfolder
 		}
-		if imgType != "" {
+		if imgType := r.URL.Query().Get("type"); imgType != "" {
 			viewURL += "&type=" + imgType
 		}
 		resp, err := http.Get(viewURL)
 		if err != nil {
-			jsonError(w, "comfyui image fetch failed: "+err.Error(), http.StatusBadGateway)
+			w.Header().Set("Content-Type", "image/gif")
+			w.Write(transparentGIF)
 			return
 		}
 		defer resp.Body.Close()
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "max-age=86400")
 		io.Copy(w, resp.Body)
+	}
+}
+
+func readPNGPrompt(data []byte) (string, error) {
+	if len(data) < 8 || string(data[:8]) != "\x89PNG\r\n\x1a\n" {
+		return "", nil
+	}
+	pos := 8
+	for pos+8 <= len(data) {
+		length := int(binary.BigEndian.Uint32(data[pos : pos+4]))
+		chunkType := string(data[pos+4 : pos+8])
+		if pos+12+length > len(data) {
+			break
+		}
+		chunkData := data[pos+8 : pos+8+length]
+		if chunkType == "tEXt" || chunkType == "iTXt" {
+			nullIdx := bytes.IndexByte(chunkData, 0)
+			if nullIdx > 0 && nullIdx < len(chunkData) {
+				keyword := string(chunkData[:nullIdx])
+				textData := chunkData[nullIdx+1:]
+				if keyword == "prompt" {
+					return string(textData), nil
+				}
+			}
+		}
+		pos += 12 + length
+	}
+	return "", nil
+}
+
+func handleComfyPromptInfo(cfg *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filename := r.URL.Query().Get("filename")
+		if filename == "" || !validPathComponent(filename) {
+			jsonError(w, "filename required", http.StatusBadRequest)
+			return
+		}
+
+		var pngData []byte
+		if cfg.SavePath != "" {
+			localPath := filepath.Join(cfg.SavePath, filename)
+			if d, err := os.ReadFile(localPath); err == nil && len(d) > 0 {
+				pngData = d
+			}
+		}
+
+		if pngData == nil {
+			viewURL := cfg.ComfyAddress + "/view?filename=" + url.QueryEscape(filename)
+			if subfolder := r.URL.Query().Get("subfolder"); subfolder != "" {
+				viewURL += "&subfolder=" + subfolder
+			}
+			if imgType := r.URL.Query().Get("type"); imgType != "" {
+				viewURL += "&type=" + imgType
+			}
+			resp, err := http.Get(viewURL)
+			if err != nil {
+				jsonError(w, "comfyui request failed: "+err.Error(), http.StatusBadGateway)
+				return
+			}
+			defer resp.Body.Close()
+			pngData, err = io.ReadAll(resp.Body)
+			if err != nil {
+				jsonError(w, "failed to read response", http.StatusBadGateway)
+				return
+			}
+		}
+
+		promptStr, err := readPNGPrompt(pngData)
+		if err != nil || promptStr == "" {
+			jsonError(w, "prompt not found in PNG", http.StatusNotFound)
+			return
+		}
+
+		var promptJSON interface{}
+		if err := json.Unmarshal([]byte(promptStr), &promptJSON); err != nil {
+			jsonError(w, "invalid prompt JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"prompt": promptJSON})
 	}
 }
 
@@ -178,11 +291,11 @@ func handleComfySaveImage(cfg *config.Config) http.HandlerFunc {
 			jsonError(w, "invalid request", http.StatusBadRequest)
 			return
 		}
-		if req.Filename == "" {
+		if req.Filename == "" || !validPathComponent(req.Filename) {
 			jsonError(w, "filename required", http.StatusBadRequest)
 			return
 		}
-		viewURL := cfg.ComfyAddress + "/view?filename=" + req.Filename
+		viewURL := cfg.ComfyAddress + "/view?filename=" + url.QueryEscape(req.Filename)
 		if req.Subfolder != "" {
 			viewURL += "&subfolder=" + req.Subfolder
 		}
@@ -220,6 +333,56 @@ func handleComfySaveImage(cfg *config.Config) http.HandlerFunc {
 	}
 }
 
+func handleComfyScanHistory(cfg *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		savePath := cfg.SavePath
+		if savePath == "" {
+			savePath = "./output"
+		}
+		entries, err := os.ReadDir(savePath)
+		if err != nil {
+			jsonError(w, "failed to read save path: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		type scannedFile struct {
+			name    string
+			modTime time.Time
+		}
+		var scanned []scannedFile
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".png") {
+				continue
+			}
+			data, err := os.ReadFile(filepath.Join(savePath, entry.Name()))
+			if err != nil {
+				continue
+			}
+			promptStr, err := readPNGPrompt(data)
+			if err != nil || promptStr == "" {
+				continue
+			}
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+			scanned = append(scanned, scannedFile{name: entry.Name(), modTime: info.ModTime()})
+		}
+		sort.Slice(scanned, func(i, j int) bool {
+			return scanned[i].modTime.After(scanned[j].modTime)
+		})
+		files := make([]string, len(scanned))
+		for i, sf := range scanned {
+			files[i] = sf.name
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"files": files})
+	}
+}
+
 func handleComfyWS(cfg *config.Config) http.HandlerFunc {
 	var upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
@@ -244,33 +407,33 @@ func handleComfyWS(cfg *config.Config) http.HandlerFunc {
 		}
 		defer comfyConn.Close()
 
-		errc := make(chan error, 2)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		go func() {
+			defer cancel()
 			for {
 				mt, msg, err := comfyConn.ReadMessage()
 				if err != nil {
-					errc <- err
 					return
 				}
 				if err := browserConn.WriteMessage(mt, msg); err != nil {
-					errc <- err
 					return
 				}
 			}
 		}()
 		go func() {
+			defer cancel()
 			for {
 				_, msg, err := browserConn.ReadMessage()
 				if err != nil {
-					errc <- err
 					return
 				}
 				if err := comfyConn.WriteMessage(websocket.TextMessage, msg); err != nil {
-					errc <- err
 					return
 				}
 			}
 		}()
-		<-errc
+		<-ctx.Done()
 	}
 }

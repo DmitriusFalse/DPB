@@ -67,7 +67,40 @@ var migrations = []string{
 	`CREATE INDEX IF NOT EXISTS idx_tags_category ON tags(category_name, subcategory_name)`,
 	`CREATE INDEX IF NOT EXISTS idx_tags_file ON tags(file_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_tags_file_tag ON tags(file_id, tag_name)`,
-	`ALTER TABLE saved_prompts ADD COLUMN gen_data TEXT NOT NULL DEFAULT ''`,
+}
+
+func columnExists(db *sql.DB, table, column string) (bool, error) {
+	rows, err := db.Query(fmt.Sprintf("PRAGMA table_info(%s)", table))
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull sql.NullInt64
+		var dfltValue sql.NullString
+		var pk int
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dfltValue, &pk); err != nil {
+			return false, err
+		}
+		if name == column {
+			return true, nil
+		}
+	}
+	return false, rows.Err()
+}
+
+func addColumnIfNotExists(db *sql.DB, table, column, colDef string) error {
+	exists, err := columnExists(db, table, column)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	_, err = db.Exec(fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", table, colDef))
+	return err
 }
 
 func Init(dbPath string) (*sql.DB, error) {
@@ -84,6 +117,10 @@ func Init(dbPath string) (*sql.DB, error) {
 		if _, err := db.Exec(m); err != nil {
 			return nil, fmt.Errorf("migration: %w", err)
 		}
+	}
+
+	if err := addColumnIfNotExists(db, "saved_prompts", "gen_data", "gen_data TEXT NOT NULL DEFAULT ''"); err != nil {
+		return nil, fmt.Errorf("migration: %w", err)
 	}
 
 	repo := NewRepo(db)

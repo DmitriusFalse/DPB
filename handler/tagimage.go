@@ -22,7 +22,7 @@ func handleTagImage(repo *database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		packID, _ := strconv.Atoi(r.URL.Query().Get("pack_id"))
 		tagName := r.URL.Query().Get("tag")
-		if packID <= 0 || tagName == "" {
+		if packID <= 0 || tagName == "" || !validPathComponent(tagName) {
 			w.Header().Set("Content-Type", "image/gif")
 			w.Write(transparentGIF)
 			return
